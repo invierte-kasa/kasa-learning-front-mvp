@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kasa Dashboard</title>
+    <style>
+        :root {
+            /* --- PALETA DARK MODE --- */
+            --bg-body: #0F172A;      /* Azul noche profundo */
+            --bg-card: #1E293B;      /* Gris azulado para tarjetas */
+            --bg-hover: #334155;     /* Hover states */
+            --bg-icon-dim: rgba(255, 255, 255, 0.05); /* Fondo iconos inactivos */
+            
+            --text-main: #F8FAFC;    /* Blanco casi puro */
+            --text-muted: #94A3B8;   /* Gris texto secundario */
+            --text-disabled: #64748B; /* Texto muy apagado */
+            
+            --primary: #10B981;      /* Verde Kasa */
+            --primary-dark: #059669;
+            
+            --border: #334155;
+            --radius-card: 1.5rem;
+            --radius-item: 1rem;
+            
+            --nav-height-mobile: 80px;
+            --sidebar-width-desktop: 260px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            min-height: 100vh;
+        }
+
+        /* ========================================
+           LAYOUT PRINCIPAL
+           ========================================
+        */
+        .layout-container {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* ========================================
+           NAVEGACIÓN (Mobile Bottom / Desktop Side)
+           ========================================
+        */
+        .main-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: var(--nav-height-mobile);
+            background-color: var(--bg-body);
+            border-top: 1px solid var(--border);
+            z-index: 50;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding-bottom: 10px; /* Safe area iOS */
+        }
+
+        .nav-logo-desktop { display: none; }
+
+        .nav-item {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            cursor: pointer;
+            padding: 0.6rem;
+            border-radius: 1rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            width: 100%;
+            max-width: 80px;
+            text-decoration: none;
+        }
+
+        .nav-item svg { 
+            width: 24px; 
+            height: 24px; 
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+        }
+        
+        .nav-item:hover:not(.active) { 
+            color: var(--text-main); 
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        
+        .nav-item:hover svg {
+            transform: scale(1.15) translateY(-2px);
+        }
+
+        .nav-item.active { 
+            color: var(--primary); 
+        }
+        
+        .nav-item.active svg {
+            transform: scale(1.1);
+        }
+
+        /* ========================================
+           CONTENIDO PRINCIPAL
+           ========================================
+        */
+        .main-content {
+            flex: 1;
+            padding: 1.5rem;
+            padding-bottom: calc(var(--nav-height-mobile) + 1.5rem);
+            width: 100%;
+        }
+
+        /* Header */
+        .top-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .mobile-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .logo-box {
+            background-color: var(--primary);
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .user-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid var(--border);
+        }
+
+        /* Welcome & Stats */
+        .welcome-section h1 {
+            font-size: 1.75rem;
+            line-height: 1.2;
+            margin-bottom: 0.5rem;
+        }
+
+        .welcome-section p {
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+        }
+
+        .stats-grid {
+            display: flex;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 1rem;
+            margin-bottom: 2.5rem;
+            gap: 1rem;
+        }
+
+        .stat-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-right: 1px solid var(--border);
+        }
+        
+        .stat-item:last-child {
+            border-right: none;
+            flex: 1.5;
+            align-items: stretch;
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-value { font-size: 1.25rem; font-weight: 800; }
+
+        .xp-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .xp-bar-bg {
+            width: 100%;
+            height: 6px;
+            background-color: var(--bg-body);
+            border-radius: 3px;
+            margin-top: 0.5rem;
+        }
+        .xp-bar-fill {
+            width: 80%;
+            height: 100%;
+            background-color: var(--primary);
+            border-radius: 3px;
+        }
+
+        /* Grid Layout para Secciones */
+        .dashboard-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 2.5rem; /* Espacio entre secciones en móvil */
+        }
+
+        /* --- TARJETA DE APRENDIZAJE --- */
+        .section-title {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            font-weight: 700;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-card);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card-image {
+            height: 150px;
+            background: linear-gradient(135deg, #0F172A 0%, #064E3B 100%);
+            position: relative;
+        }
+        .card-image::after {
+            content: '';
+            position: absolute;
+            bottom: -20px; right: -20px;
+            width: 100px; height: 100px;
+            background: var(--primary);
+            filter: blur(50px); opacity: 0.5;
+            border-radius: 50%;
+        }
+
+        .card-content { padding: 1.5rem; }
+        .tag { color: var(--primary); font-weight: 700; font-size: 0.75rem; margin-bottom: 0.5rem; display: block; }
+        .card-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 1.5rem; line-height: 1.4; }
+
+        .progress-meta { display: flex; justify-content: space-between; font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.5rem; }
+        .progress-track { height: 8px; background-color: var(--bg-body); border-radius: 4px; margin-bottom: 1.5rem; }
+        .progress-fill { height: 100%; width: 85%; background-color: var(--primary); border-radius: 4px; }
+
+        .btn-primary {
+            width: 100%;
+            padding: 1rem;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-bottom: 4px solid var(--primary-dark);
+            border-radius: 1rem;
+            font-weight: 800;
+            font-size: 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            transition: all 0.15s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.1);
+        }
+
+        .btn-primary:active {
+            transform: translateY(2px);
+            border-bottom-width: 0px;
+            margin-bottom: 4px;
+        }
+
+        /* --- NUEVA SECCIÓN: PRÓXIMOS PASOS (LOCKED) --- */
+        .locked-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .locked-item {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-item);
+            padding: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            cursor: not-allowed;
+            transition: border-color 0.2s;
+        }
+        
+        /* Contenedor del icono (cuadrado oscuro sutil) */
+        .locked-icon-box {
+            width: 48px;
+            height: 48px;
+            background-color: var(--bg-icon-dim);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            color: var(--text-muted); /* Icono gris */
+        }
+
+        .locked-info {
+            flex: 1;
+        }
+
+        .locked-title-text {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-bottom: 0.25rem;
+        }
+
+        .locked-sub {
+            font-size: 0.85rem;
+            color: var(--text-disabled); /* Texto "Bloqueado" más oscuro */
+            font-weight: 500;
+        }
+
+        .locked-arrow {
+            color: var(--text-disabled);
+        }
+
+        /* --- SECCIÓN MÓDULOS (NEW) --- */
+        .sections-list {
+            grid-column: 1 / -1; /* Ocupa todo el ancho si hay espacio */
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .sections-header-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 0.5rem;
+        }
+        
+        .sections-header-info h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+        
+        .sections-header-info p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .module-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-card);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            position: relative;
+            transition: all 0.2s ease;
+        }
+
+        .module-card:hover { transform: translateY(-2px); border-color: var(--border); }
+        
+        .module-card.active {
+            border: 2px solid var(--primary);
+            box-shadow: 0 4px 20px -5px rgba(16, 185, 129, 0.2);
+        }
+
+        .module-card.locked {
+            opacity: 0.8;
+            background-color: rgba(30, 41, 59, 0.5); /* Más oscuro */
+        }
+
+        .module-header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .module-icon-wrapper {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background-color: var(--bg-icon-dim);
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .module-card.locked .module-icon-wrapper {
+            color: var(--text-disabled);
+            background-color: rgba(255,255,255,0.02);
+            border: 1px dashed var(--border);
+        }
+
+        .status-pill {
+            font-size: 0.65rem;
+            font-weight: 800;
+            padding: 0.35rem 0.75rem;
+            border-radius: 999px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .status-pill.completed {
+            background-color: rgba(16, 185, 129, 0.15);
+            color: var(--primary);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+        .status-pill.incomplete {
+            background-color: rgba(255, 255, 255, 0.05);
+            color: var(--text-muted);
+            border: 1px solid var(--border);
+        }
+        .status-pill.locked {
+            color: var(--text-disabled);
+            border: 1px solid var(--border);
+            background: transparent;
+        }
+
+        .module-content h5 {
+            color: var(--primary);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            margin-bottom: 0.25rem;
+            font-weight: 700;
+        }
+        .module-card.locked .module-content h5 { color: var(--text-disabled); }
+
+        .module-content h3 {
+            font-size: 1.1rem;
+            color: var(--text-main);
+            margin-bottom: 0.75rem;
+            font-weight: 700;
+        }
+        .module-card.locked .module-content h3 { color: var(--text-muted); }
+
+        .module-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: auto;
+        }
+        
+        .module-stats {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            align-items: center;
+        }
+        
+        .btn-continue {
+            background-color: var(--primary);
+            color: #fff;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-continue:hover { background-color: var(--primary-dark); }
+
+        /* ========================================
+           MEDIA QUERIES (DESKTOP)
+           ========================================
+        */
+        @media (min-width: 1024px) {
+            .layout-container { flex-direction: row; }
+
+            /* Sidebar */
+            .main-nav {
+                position: sticky;
+                top: 0;
+                width: var(--sidebar-width-desktop);
+                height: 100vh;
+                flex-direction: column;
+                justify-content: flex-start;
+                padding: 2rem 1.5rem;
+                border-top: none;
+                border-right: 1px solid var(--border);
+                gap: 0.5rem;
+                align-items: stretch;
+            }
+
+            .nav-logo-desktop {
+                display: flex; align-items: center; gap: 0.75rem;
+                font-size: 1.5rem; font-weight: 800; margin-bottom: 3rem;
+                padding-left: 0.5rem; color: var(--text-main);
+            }
+
+            .nav-item { flex-direction: row; gap: 1rem; font-size: 0.95rem; padding: 1rem; max-width: 100%; justify-content: flex-start; }
+            .nav-item:hover { background-color: var(--bg-hover); }
+
+            /* Content */
+            .main-content {
+                padding: 2rem 4rem;
+                max-width: 1200px;
+                margin: 0 auto;
+            }
+
+            .top-header { justify-content: flex-end; }
+            .mobile-brand { display: none; }
+            .welcome-section h1 { font-size: 2.5rem; }
+
+            .stats-grid { padding: 1.5rem 2rem; gap: 2rem; }
+            .stat-item, .xp-container { align-items: flex-start; }
+
+            /* Grid para distribuir las tarjetas en escritorio */
+            .dashboard-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+                gap: 2rem;
+                align-items: start;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="layout-container">
+        
+        <nav class="main-nav">
+            <div class="nav-logo-desktop">
+                <div class="logo-box">K</div>
+                <span>Kasa</span>
+            </div>
+
+            <a href="index.html" class="nav-item active">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+                <span>Aprender</span>
+            </a>
+            <a href="ranking.html" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                <span>Ranking</span>
+            </a>
+            <a href="profile.html" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                <span>Perfil</span>
+            </a>
+        </nav>
+
+        <main class="main-content">
+            
+            <header class="top-header">
+                <div class="mobile-brand">
+                    <div class="logo-box">K</div>
+                    <span>Kasa</span>
+                </div>
+                <div class="user-actions">
+                    <svg style="color:var(--text-muted); cursor:pointer;" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                    <img src="https://ui-avatars.com/api/?name=Alexandre&background=10B981&color=fff" alt="User" class="user-avatar">
+                </div>
+            </header>
+
+            <section class="welcome-section">
+                <h1>Welcome back,<br>Alexandre</h1>
+                <p>You've completed 85% of your weekly goal.</p>
+            </section>
+
+            <section class="stats-grid">
+                <div class="stat-item">
+                    <span class="stat-label">Level</span>
+                    <span class="stat-value">12</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Streak</span>
+                    <span class="stat-value">15 🔥</span>
+                </div>
+                <div class="stat-item">
+                    <div class="xp-container">
+                        <span class="stat-label">XP</span>
+                        <span class="stat-value" style="font-size: 1.1rem;">2,450 <span style="color:var(--text-muted); font-size:0.9rem;">/ 3k</span></span>
+                        <div class="xp-bar-bg"><div class="xp-bar-fill"></div></div>
+                    </div>
+                </div>
+            </section>
+
+            <div class="dashboard-grid">
+                
+                <div class="learning-section">
+                    <h3 class="section-title">Continue Learning</h3>
+                    <a href="sections.html" style="text-decoration: none; color: inherit; display: block;">
+                        <div class="card" style="cursor: pointer;">
+                            <div class="card-image"></div>
+                            <div class="card-content">
+                                <span class="tag">MODULE 4</span>
+                                <h2 class="card-title">Advanced UI Principles: Spatial Systems & Grids</h2>
+                                
+                                <div class="progress-meta">
+                                    <span>Progress</span>
+                                    <span style="color: var(--text-main); font-weight:600;">85%</span>
+                                </div>
+                                <div class="progress-track">
+                                    <div class="progress-fill"></div>
+                                </div>
+
+                                <button class="btn-primary">
+                                    Continuar
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+
+                <div class="next-steps-section">
+                    <h3 class="section-title">
+                        Próximos Pasos
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                    </h3>
+                    
+                    <div class="locked-list">
+                        <a href="sections.html" style="text-decoration: none; color: inherit; display: block;">
+                            <div class="locked-item" style="cursor: pointer;">
+                                <div class="locked-icon-box">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                                </div>
+                                <div class="locked-info">
+                                    <div class="locked-title-text">Análisis de Mercado Local</div>
+                                    <div class="locked-sub">Bloqueado - Nivel 3 requerido</div>
+                                </div>
+                                <div class="locked-arrow">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                </div>
+                            </div>
+                        </a>
+
+                        <a href="sections.html" style="text-decoration: none; color: inherit; display: block;">
+                            <div class="locked-item" style="cursor: pointer;">
+                                <div class="locked-icon-box">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="12" y1="12" x2="12.01" y2="12"></line><line x1="2" y1="10" x2="20" y2="10"></line></svg>
+                                </div>
+                                <div class="locked-info">
+                                    <div class="locked-title-text">Financiamiento y Crédito</div>
+                                    <div class="locked-sub">Bloqueado</div>
+                                </div>
+                                <div class="locked-arrow">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+</body>
+</html>

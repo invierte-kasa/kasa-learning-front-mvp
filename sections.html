@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kasa - Sections</title>
+    <style>
+        :root {
+            /* --- PALETA DARK MODE --- */
+            --bg-body: #0F172A;      /* Azul noche profundo */
+            --bg-card: #1E293B;      /* Gris azulado para tarjetas */
+            --bg-hover: #334155;     /* Hover states */
+            --bg-icon-dim: rgba(255, 255, 255, 0.05); /* Fondo iconos inactivos */
+            
+            --text-main: #F8FAFC;    /* Blanco casi puro */
+            --text-muted: #94A3B8;   /* Gris texto secundario */
+            --text-disabled: #64748B; /* Texto muy apagado */
+            
+            --primary: #10B981;      /* Verde Kasa */
+            --primary-dark: #059669;
+            
+            --border: #334155;
+            --radius-card: 1.5rem;
+            --radius-item: 1rem;
+            
+            --nav-height-mobile: 80px;
+            --sidebar-width-desktop: 260px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            min-height: 100vh;
+        }
+
+        /* ========================================
+           LAYOUT PRINCIPAL
+           ========================================
+        */
+        .layout-container {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* ========================================
+           NAVEGACIÓN (Mobile Bottom / Desktop Side)
+           ========================================
+        */
+        .main-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: var(--nav-height-mobile);
+            background-color: var(--bg-body);
+            border-top: 1px solid var(--border);
+            z-index: 50;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding-bottom: 10px; /* Safe area iOS */
+        }
+
+        .nav-logo-desktop { display: none; }
+
+        .nav-item {
+            color: var(--text-muted);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            cursor: pointer;
+            padding: 0.6rem;
+            border-radius: 1rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            width: 100%;
+            max-width: 80px;
+            text-decoration: none;
+            background: none;
+            border: none;
+        }
+
+        .nav-item svg { 
+            width: 24px; 
+            height: 24px; 
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+        }
+        
+        .nav-item:hover:not(.active) { 
+            color: var(--text-main); 
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        
+        .nav-item:hover svg {
+            transform: scale(1.15) translateY(-2px);
+        }
+
+        .nav-item.active { 
+            color: var(--primary); 
+        }
+        
+        .nav-item.active svg {
+            transform: scale(1.1);
+        }
+
+        /* ========================================
+           CONTENIDO PRINCIPAL
+           ========================================
+        */
+        .main-content {
+            flex: 1;
+            padding: 1.5rem;
+            padding-bottom: calc(var(--nav-height-mobile) + 1.5rem);
+            width: 100%;
+        }
+
+        /* Header (Specific for Sections) */
+        .sections-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+            padding: 0.5rem 0;
+        }
+
+        .back-btn {
+            width: 40px;
+            height: 40px;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-main);
+            text-decoration: none;
+        }
+
+        .header-main-info {
+            flex: 1;
+            margin-left: 1rem;
+        }
+
+        .header-main-info h1 {
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .header-main-info p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .reward-info {
+            text-align: right;
+        }
+
+        .reward-info .xp-val {
+            color: var(--primary);
+            font-weight: 800;
+            font-size: 1rem;
+        }
+
+        .reward-info .reward-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            font-weight: 700;
+            display: block;
+        }
+
+        /* --- SECCIÓN MÓDULOS --- */
+        .sections-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .sections-header-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 0.5rem;
+        }
+        
+        .sections-header-info h2 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+        
+        .sections-header-info p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .xp-bar-bg {
+            width: 100%;
+            height: 10px;
+            background-color: var(--bg-card);
+            border-radius: 5px;
+            margin-bottom: 2rem;
+            overflow: hidden;
+        }
+        .xp-bar-fill {
+            height: 100%;
+            background-color: var(--primary);
+            border-radius: 5px;
+        }
+
+        .module-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-card);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            position: relative;
+            transition: all 0.2s ease;
+        }
+
+        .module-card:hover { transform: translateY(-2px); border-color: var(--border); }
+        
+        .module-card.active {
+            border: 2px solid var(--primary);
+            box-shadow: 0 4px 20px -5px rgba(16, 185, 129, 0.2);
+        }
+        
+        /* Floating active dot */
+        .module-card.active::after {
+            content: '';
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            width: 14px;
+            height: 14px;
+            background-color: var(--primary);
+            border-radius: 50%;
+            border: 3px solid var(--bg-body);
+        }
+
+        .module-card.locked {
+            opacity: 0.8;
+            background-color: rgba(30, 41, 59, 0.5); /* Más oscuro */
+        }
+
+        .module-header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .module-icon-wrapper {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background-color: var(--bg-icon-dim);
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .module-card.locked .module-icon-wrapper {
+            color: var(--text-disabled);
+            background-color: rgba(255,255,255,0.02);
+            border: 1px dashed var(--border);
+        }
+
+        .status-pill {
+            font-size: 0.65rem;
+            font-weight: 800;
+            padding: 0.35rem 0.75rem;
+            border-radius: 999px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .status-pill.completed {
+            background-color: rgba(16, 185, 129, 0.15);
+            color: var(--primary);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+        .status-pill.incomplete {
+            background-color: rgba(255, 255, 255, 0.05);
+            color: var(--text-muted);
+            border: 1px solid var(--border);
+        }
+        .status-pill.locked {
+            color: var(--text-disabled);
+            border: 1px solid var(--border);
+            background: transparent;
+        }
+
+        .module-content h5 {
+            color: var(--primary);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            margin-bottom: 0.25rem;
+            font-weight: 700;
+        }
+        .module-card.locked .module-content h5 { color: var(--text-disabled); }
+
+        .module-content h3 {
+            font-size: 1.25rem;
+            color: var(--text-main);
+            margin-bottom: 0.75rem;
+            font-weight: 700;
+        }
+        .module-card.locked .module-content h3 { color: var(--text-muted); }
+
+        .module-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: auto;
+        }
+        
+        .module-stats {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            align-items: center;
+        }
+        
+        .btn-continue {
+            background-color: var(--primary);
+            color: #fff;
+            border: none;
+            border-bottom: 4px solid var(--primary-dark);
+            padding: 0.75rem 1.75rem;
+            border-radius: 999px; /* Rounded pill style from image */
+            font-weight: 800;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .btn-continue:hover { 
+            filter: brightness(1.1);
+            transform: translateY(-2px);
+        }
+        
+        .btn-continue:active {
+            transform: translateY(2px);
+            border-bottom-width: 0px;
+            margin-bottom: 4px;
+        }
+        
+        .btn-continue:hover:not(:active) {
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        }
+
+        /* ========================================
+           MEDIA QUERIES (DESKTOP)
+           ========================================
+        */
+        @media (min-width: 1024px) {
+            .layout-container { flex-direction: row; }
+
+            /* Sidebar */
+            .main-nav {
+                position: sticky;
+                top: 0;
+                width: var(--sidebar-width-desktop);
+                height: 100vh;
+                flex-direction: column;
+                justify-content: flex-start;
+                padding: 2rem 1.5rem;
+                border-top: none;
+                border-right: 1px solid var(--border);
+                gap: 0.5rem;
+                align-items: stretch;
+            }
+
+            .nav-logo-desktop {
+                display: flex; align-items: center; gap: 0.75rem;
+                font-size: 1.5rem; font-weight: 800; margin-bottom: 3rem;
+                padding-left: 0.5rem; color: var(--text-main);
+            }
+
+            .nav-item { flex-direction: row; gap: 1rem; font-size: 0.95rem; padding: 1rem; max-width: 100%; justify-content: flex-start; }
+            .nav-item:hover { background-color: var(--bg-hover); }
+
+            /* Content */
+            .main-content {
+                padding: 2rem 4rem;
+                max-width: 800px; /* More narrow for readability on this specific page */
+                margin: 0 auto;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="layout-container">
+        
+        <nav class="main-nav">
+            <div class="nav-logo-desktop">
+                <div class="logo-box">K</div>
+                <span>Kasa</span>
+            </div>
+
+            <a href="index.html" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+                <span>Aprender</span>
+            </a>
+            <a href="ranking.html" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                <span>Ranking</span>
+            </a>
+            <a href="profile.html" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                <span>Perfil</span>
+            </a>
+        </nav>
+
+        <main class="main-content">
+            
+            <header class="sections-header">
+                <a href="index.html" class="back-btn">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                </a>
+                <div class="header-main-info">
+                    <h1>Fundamentos</h1>
+                    <p>Master property valuation</p>
+                </div>
+                <div class="reward-info">
+                    <span class="xp-val">450 XP</span>
+                    <span class="reward-label">Total Reward</span>
+                </div>
+            </header>
+
+            <section class="sections-list">
+                
+                <div class="sections-header-info">
+                    <div>
+                        <h2>Sección 1</h2>
+                        <p>Progreso del curriculo</p>
+                    </div>
+                    <div style="color:var(--primary); font-weight:800; font-size:1.5rem;">50%</div>
+                </div>
+                
+                <div class="xp-bar-bg">
+                    <div class="xp-bar-fill" style="width:50%;"></div>
+                </div>
+
+                <!-- Módulo 1 -->
+                <div class="module-card">
+                    <div class="module-header-row">
+                        <div class="module-icon-wrapper">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l8-4 8 4v14M8 21v-9a4 4 0 0 1 4-4v0a4 4 0 0 1 4 4v9"/></svg>
+                        </div>
+                        <span class="status-pill completed">Completado</span>
+                    </div>
+                    <div class="module-content">
+                        <h5>Módulo 1</h5>
+                        <h3>Conceptos Básicos de Inversión</h3>
+                        <div class="module-footer">
+                            <div class="module-stats">
+                                <span><svg style="vertical-align:text-bottom; margin-right:4px;" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> 15 min</span>
+                                <span>•</span>
+                                <span>100 XP</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Módulo 2 -->
+                <div class="module-card">
+                    <div class="module-header-row">
+                        <div class="module-icon-wrapper">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><line x1="9" y1="22" x2="9" y2="22.01"></line><line x1="15" y1="22" x2="15" y2="22.01"></line><line x1="9" y1="18" x2="9" y2="18.01"></line><line x1="15" y1="18" x2="15" y2="18.01"></line><line x1="9" y1="14" x2="9" y2="14.01"></line><line x1="15" y1="14" x2="15" y2="14.01"></line><line x1="9" y1="10" x2="9" y2="10.01"></line><line x1="15" y1="10" x2="15" y2="10.01"></line><line x1="9" y1="6" x2="9" y2="6.01"></line><line x1="15" y1="6" x2="15" y2="6.01"></line></svg>
+                        </div>
+                        <span class="status-pill completed">Completado</span>
+                    </div>
+                    <div class="module-content">
+                        <h5>Módulo 2</h5>
+                        <h3>Tipos de Propiedades</h3>
+                        <div class="module-footer">
+                            <div class="module-stats">
+                                <span><svg style="vertical-align:text-bottom; margin-right:4px;" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> 25 min</span>
+                                <span>•</span>
+                                <span>150 XP</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Módulo 3 (Active) -->
+                <div class="module-card active">
+                    <div class="module-header-row">
+                        <div class="module-icon-wrapper">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 6l7-4 8 4 7-4v16l-7 4-8-4-7 4V6z"></path><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>
+                        </div>
+                        <span class="status-pill incomplete">Incompleto</span>
+                    </div>
+                    <div class="module-content">
+                        <h5>Módulo 3</h5>
+                        <h3>Estudio de Mercado Local</h3>
+                        <div class="module-footer">
+                            <div class="module-stats">
+                                <span><svg style="vertical-align:text-bottom; margin-right:4px;" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> 20 min</span>
+                                <span>•</span>
+                                <span>200 XP</span>
+                            </div>
+                            <a href="lesson.html" class="btn-continue" style="text-decoration: none;">Continuar</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Módulo 4 (Locked) -->
+                <div class="module-card locked">
+                    <div class="module-header-row">
+                        <div class="module-icon-wrapper">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                        </div>
+                        <span class="status-pill locked">Bloqueado</span>
+                    </div>
+                    <div class="module-content">
+                        <h5>Módulo 4</h5>
+                        <h3>Análisis de Riesgo Financiero</h3>
+                        <div class="module-footer">
+                            <div class="module-stats">
+                                <span><svg style="vertical-align:text-bottom; margin-right:4px;" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> 30 min</span>
+                                <span>•</span>
+                                <span>200 XP</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+        </main>
+    </div>
+
+</body>
+</html>

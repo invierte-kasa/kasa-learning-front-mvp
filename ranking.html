@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kasa Ranking - Inversores</title>
+    <style>
+        :root {
+            /* --- PALETA DARK MODE (Identical to index.html) --- */
+            --bg-body: #0F172A;      /* Azul noche profundo */
+            --bg-card: #1E293B;      /* Gris azulado para tarjetas */
+            --bg-hover: #334155;     /* Hover states */
+            --bg-icon-dim: rgba(255, 255, 255, 0.05); /* Fondo iconos inactivos */
+            
+            --text-main: #F8FAFC;    /* Blanco casi puro */
+            --text-muted: #94A3B8;   /* Gris texto secundario */
+            --text-disabled: #64748B; /* Texto muy apagado */
+            
+            --primary: #10B981;      /* Verde Kasa */
+            --primary-dark: #059669;
+            
+            --border: #334155;
+            --radius-card: 1.5rem;
+            --radius-item: 1rem;
+            
+            --nav-height-mobile: 80px;
+            --sidebar-width-desktop: 260px;
+
+            /* Podium Specifics */
+            --gold: #FDB022;
+            --silver: #98A2B3;
+            --bronze: #B692F6;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            min-height: 100vh;
+        }
+
+        /* ========================================
+           LAYOUT PRINCIPAL (Identical to index.html)
+           ========================================
+        */
+        .layout-container {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* ========================================
+           NAVEGACIÓN (Identical to index.html)
+           ========================================
+        */
+        .main-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: var(--nav-height-mobile);
+            background-color: var(--bg-body);
+            border-top: 1px solid var(--border);
+            z-index: 100;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding-bottom: 10px; /* Safe area iOS */
+        }
+
+        .nav-logo-desktop { display: none; }
+
+        .nav-item {
+            text-decoration: none;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            cursor: pointer;
+            padding: 0.6rem;
+            border-radius: 1rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            width: 100%;
+            max-width: 80px;
+        }
+
+        .nav-item svg { 
+            width: 24px; 
+            height: 24px; 
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+        }
+        
+        .nav-item:hover:not(.active) { 
+            color: var(--text-main); 
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        
+        .nav-item:hover svg {
+            transform: scale(1.15) translateY(-2px);
+        }
+
+        .nav-item.active { 
+            color: var(--primary); 
+        }
+        
+        .nav-item.active svg {
+            transform: scale(1.1);
+        }
+
+        @media (min-width: 1024px) {
+            .layout-container { flex-direction: row; }
+            .main-nav {
+                position: sticky;
+                top: 0;
+                width: var(--sidebar-width-desktop);
+                height: 100vh;
+                flex-direction: column;
+                justify-content: flex-start;
+                padding: 2rem 1.5rem;
+                border-top: none;
+                border-right: 1px solid var(--border);
+                gap: 0.5rem;
+                align-items: stretch;
+            }
+            .nav-logo-desktop {
+                display: flex; align-items: center; gap: 0.75rem;
+                font-size: 1.5rem; font-weight: 800; margin-bottom: 3rem;
+                padding-left: 0.5rem; color: var(--text-main);
+                text-decoration: none;
+            }
+            .logo-box {
+                background-color: var(--primary); color: white;
+                width: 32px; height: 32px; border-radius: 8px;
+                display: flex; align-items: center; justify-content: center;
+                font-weight: 800; font-size: 1.2rem;
+            }
+            .nav-item { flex-direction: row; gap: 1rem; font-size: 0.95rem; padding: 1rem; max-width: 100%; justify-content: flex-start; }
+            .nav-item:hover { background-color: var(--bg-hover); }
+        }
+
+        /* ========================================
+           CONTENIDO PRINCIPAL
+           ========================================
+        */
+        .main-content {
+            flex: 1;
+            padding: 1.5rem;
+            padding-bottom: calc(var(--nav-height-mobile) + 140px); /* Extrad space for sticky user status */
+            width: 100%;
+        }
+
+        @media (min-width: 1024px) {
+            .main-content {
+                padding: 3rem 4rem;
+                max-width: 900px;
+                margin: 0 auto;
+            }
+        }
+
+        /* Header Style from index.html */
+        .page-header {
+            margin-bottom: 2rem;
+        }
+        .page-header h1 {
+            font-size: 1.75rem;
+            line-height: 1.2;
+            margin-bottom: 0.5rem;
+        }
+        .page-header p {
+            color: var(--text-muted);
+        }
+
+        /* Podium Design */
+        .podium-section {
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            gap: 0.5rem;
+            margin-bottom: 3rem;
+            padding: 1rem 0;
+        }
+
+        .podium-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+            max-width: 110px;
+            position: relative;
+        }
+
+        .podium-avatar-wrap {
+            position: relative;
+            margin-bottom: 1rem;
+        }
+
+        .podium-avatar {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            border: 3px solid var(--border);
+            object-fit: cover;
+        }
+
+        .medal-badge {
+            position: absolute;
+            bottom: -5px;
+            right: -5px;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            border: 2px solid var(--bg-body);
+            background-color: var(--bg-card);
+        }
+
+        /* Rank 1 (Sarah) */
+        .rank-1 .podium-avatar {
+            width: 90px;
+            height: 90px;
+            border-color: var(--gold);
+            box-shadow: 0 0 20px rgba(253, 176, 34, 0.3);
+        }
+        .rank-1 .medal-badge { background-color: var(--gold); }
+        .rank-1 .podium-box {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(16, 185, 129, 0.05) 100%);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            height: 130px;
+            width: 120px;
+        }
+
+        .podium-box {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 1rem 1rem 0 0;
+            width: 100%;
+            height: 90px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            text-align: center;
+            padding: 0.5rem;
+        }
+
+        .podium-name { font-weight: 700; font-size: 0.85rem; margin-bottom: 2px; }
+        .podium-stat { color: var(--primary); font-weight: 800; font-size: 0.75rem; }
+        .podium-label { font-size: 0.6rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; }
+
+        /* Leaderboard Table */
+        .section-header {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--text-muted);
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            display: block;
+        }
+
+        .leaderboard-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .leaderboard-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-item);
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .leaderboard-card:hover {
+            transform: scale(1.02) translateY(-2px);
+            border-color: var(--primary);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            background-color: var(--bg-hover);
+        }
+
+        .card-rank {
+            font-weight: 800;
+            color: var(--text-muted);
+            width: 25px;
+        }
+
+        .card-user {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .card-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background-color: var(--bg-body);
+        }
+
+        .card-info h4 { font-size: 0.95rem; font-weight: 700; }
+        .card-info p { font-size: 0.7rem; color: var(--text-muted); }
+
+        .card-stat {
+            text-align: right;
+            font-weight: 800;
+            font-size: 1rem;
+        }
+        .card-stat span { font-size: 0.7rem; color: var(--text-muted); margin-left: 2px; }
+
+        /* User Status Sticky */
+        .user-status-bar {
+            position: fixed;
+            bottom: calc(var(--nav-height-mobile) + 1rem);
+            left: 1rem;
+            right: 1rem;
+            background-color: var(--bg-body);
+            border: 2px solid var(--primary);
+            border-radius: 1.5rem;
+            padding: 1rem;
+            z-index: 90;
+            box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        @media (min-width: 1024px) {
+            .user-status-bar {
+                left: calc(var(--sidebar-width-desktop) + 2rem);
+                right: 2rem;
+                margin-left: 0;
+            }
+        }
+
+        .user-status-main {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .status-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 3px solid var(--primary);
+        }
+
+        .status-info { flex: 1; }
+        .status-info h4 { font-size: 1rem; font-weight: 800; }
+        .status-info h4 span { color: var(--text-muted); font-weight: 500;}
+        .status-main-stat { color: var(--primary); font-weight: 900; font-size: 1.1rem; }
+
+        .status-progress-track {
+            height: 6px;
+            background-color: var(--bg-card);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 4px;
+        }
+        .status-progress-fill {
+            height: 100%;
+            background-color: var(--primary);
+            width: 80%;
+        }
+        .status-progress-meta {
+            text-align: right;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            font-weight: 700;
+        }
+
+        .status-quote {
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+        }
+        .status-quote b { color: var(--primary); }
+
+        /* Floating Filter Toggle */
+        .filter-tabs {
+            display: flex;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 4px;
+            margin-bottom: 2rem;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 0.6rem;
+            border: none;
+            background: none;
+            color: var(--text-muted);
+            font-weight: 700;
+            font-size: 0.85rem;
+            cursor: pointer;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        .tab-btn.active {
+            background-color: var(--primary);
+            color: white;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+        }
+
+        /* View Switching */
+        .ranking-view { display: none; }
+        .ranking-view.active { display: block; }
+
+    </style>
+</head>
+<body>
+
+    <div class="layout-container">
+        
+        <!-- Identical Nav to index.html -->
+        <nav class="main-nav">
+            <a href="index.html" class="nav-logo-desktop">
+                <div class="logo-box">K</div>
+                <span>Kasa</span>
+            </a>
+
+            <a href="index.html" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+                <span>Aprender</span>
+            </a>
+            <a href="ranking.html" class="nav-item active">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                <span>Ranking</span>
+            </a>
+            <a href="profile.html" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                <span>Perfil</span>
+            </a>
+        </nav>
+
+        <main class="main-content">
+            
+            <header class="page-header">
+                <h1>League Rankings</h1>
+                <p>Top Kasa Investors this week</p>
+            </header>
+
+            <div class="filter-tabs">
+                <button class="tab-btn active" onclick="switchView('xp', this)">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 2v20M2 12h20"></path></svg>
+                    By XP
+                </button>
+                <button class="tab-btn" onclick="switchView('streak', this)">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
+                    By Streak
+                </button>
+            </div>
+
+            <!-- XP VIEW -->
+            <div id="view-xp" class="ranking-view active">
+                <section class="podium-section">
+                    <div class="podium-card rank-2">
+                        <div class="podium-avatar-wrap">
+                            <img src="https://ui-avatars.com/api/?name=Michael+B&background=1E293B&color=94A3B8" class="podium-avatar" alt="Michael">
+                            <div class="medal-badge">🥈</div>
+                        </div>
+                        <div class="podium-box">
+                            <div class="podium-name">Michael B.</div>
+                            <div class="podium-stat">14,850 XP</div>
+                            <div class="podium-label">Pro II</div>
+                        </div>
+                    </div>
+
+                    <div class="podium-card rank-1">
+                        <div class="podium-avatar-wrap">
+                            <img src="https://ui-avatars.com/api/?name=Sarah+K&background=064E3B&color=F8FAFC" class="podium-avatar" alt="Sarah">
+                            <div class="medal-badge">🏆</div>
+                        </div>
+                        <div class="podium-box">
+                            <div class="podium-name">Sarah K.</div>
+                            <div class="podium-stat">15,400 XP</div>
+                            <div class="podium-label">Master</div>
+                        </div>
+                    </div>
+
+                    <div class="podium-card rank-3">
+                        <div class="podium-avatar-wrap">
+                            <img src="https://ui-avatars.com/api/?name=Juan+R&background=1E293B&color=94A3B8" class="podium-avatar" alt="Juan">
+                            <div class="medal-badge">🥉</div>
+                        </div>
+                        <div class="podium-box">
+                            <div class="podium-name">Juan R.</div>
+                            <div class="podium-stat">14,600 XP</div>
+                            <div class="podium-label">Pro I</div>
+                        </div>
+                    </div>
+                </section>
+
+                <span class="section-header">Top 10 Rankings</span>
+                <div class="leaderboard-list">
+                    <div class="leaderboard-card">
+                        <div class="card-rank">4</div>
+                        <div class="card-user">
+                            <img src="https://ui-avatars.com/api/?name=Elena+M&background=334155&color=F8FAFC" class="card-avatar" alt="Elena">
+                            <div class="card-info"><h4>Elena M.</h4><p>EXPERT ASSOCIATE</p></div>
+                        </div>
+                        <div class="card-stat">13,200<span>XP</span></div>
+                    </div>
+                    <div class="leaderboard-card">
+                        <div class="card-rank">5</div>
+                        <div class="card-user">
+                            <img src="https://ui-avatars.com/api/?name=David+P&background=334155&color=F8FAFC" class="card-avatar" alt="David">
+                            <div class="card-info"><h4>David P.</h4><p>BROKER LEVEL 4</p></div>
+                        </div>
+                        <div class="card-stat">12,950<span>XP</span></div>
+                    </div>
+                    <div class="leaderboard-card">
+                        <div class="card-rank">6</div>
+                        <div class="card-user">
+                            <img src="https://ui-avatars.com/api/?name=Lisa+W&background=334155&color=F8FAFC" class="card-avatar" alt="Lisa">
+                            <div class="card-info"><h4>Lisa W.</h4><p>HOUSE HUNTER</p></div>
+                        </div>
+                        <div class="card-stat">11,400<span>XP</span></div>
+                    </div>
+                    <div class="leaderboard-card">
+                        <div class="card-rank">7</div>
+                        <div class="card-user">
+                            <img src="https://ui-avatars.com/api/?name=Marcus+J&background=334155&color=F8FAFC" class="card-avatar" alt="Marcus">
+                            <div class="card-info"><h4>Marcus J.</h4><p>KNOWLEDGE SEEKER</p></div>
+                        </div>
+                        <div class="card-stat">10,850<span>XP</span></div>
+                    </div>
+                    <div class="leaderboard-card">
+                        <div class="card-rank">8</div>
+                        <div class="card-user">
+                            <img src="https://ui-avatars.com/api/?name=Sofia+V&background=334155&color=F8FAFC" class="card-avatar" alt="Sofia">
+                            <div class="card-info"><h4>Sofia V.</h4><p>APPRAISER</p></div>
+                        </div>
+                        <div class="card-stat">9,400<span>XP</span></div>
+                    </div>
+                    <div class="leaderboard-card">
+                        <div class="card-rank">9</div>
+                        <div class="card-user">
+                            <img src="https://ui-avatars.com/api/?name=Ricardo+G&background=334155&color=F8FAFC" class="card-avatar" alt="Ricardo">
+                            <div class="card-info"><h4>Ricardo G.</h4><p>ESTATE INTERN</p></div>
+                        </div>
+                        <div class="card-stat">8,750<span>XP</span></div>
+                    </div>
+                    <div class="leaderboard-card">
+                        <div class="card-rank">10</div>
+                        <div class="card-user">
+                            <img src="https://ui-avatars.com/api/?name=Ana+L&background=334155&color=F8FAFC" class="card-avatar" alt="Ana">
+                            <div class="card-info"><h4>Ana L.</h4><p>ESTATE INTERN</p></div>
+                        </div>
+                        <div class="card-stat">8,200<span>XP</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STREAK VIEW -->
+            <div id="view-streak" class="ranking-view">
+                <section class="podium-section">
+                    <div class="podium-card rank-2">
+                        <div class="podium-avatar-wrap">
+                            <img src="https://ui-avatars.com/api/?name=David+P&background=1E293B&color=94A3B8" class="podium-avatar" alt="David">
+                            <div class="medal-badge">🥈</div>
+                        </div>
+                        <div class="podium-box">
+                            <div class="podium-name">David P.</div>
+                            <div class="podium-stat">26 Days</div>
+                            <div class="podium-label">Steady</div>
+                        </div>
+                    </div>
+
+                    <div class="podium-card rank-1">
+                        <div class="podium-avatar-wrap">
+                            <img src="https://ui-avatars.com/api/?name=Ana+L&background=064E3B&color=F8FAFC" class="podium-avatar" alt="Ana">
+                            <div class="medal-badge">🏆</div>
+                        </div>
+                        <div class="podium-box">
+                            <div class="podium-name">Ana L.</div>
+                            <div class="podium-stat">32 Days</div>
+                            <div class="podium-label">Unstoppable</div>
+                        </div>
+                    </div>
+
+                    <div class="podium-card rank-3">
+                        <div class="podium-avatar-wrap">
+                            <img src="https://ui-avatars.com/api/?name=Sarah+K&background=1E293B&color=94A3B8" class="podium-avatar" alt="Sarah">
+                            <div class="medal-badge">🥉</div>
+                        </div>
+                        <div class="podium-box">
+                            <div class="podium-name">Sarah K.</div>
+                            <div class="podium-stat">24 Days</div>
+                            <div class="podium-label">Relentless</div>
+                        </div>
+                    </div>
+                </section>
+
+                <span class="section-header">Consistency Leaders</span>
+                <div class="leaderboard-list">
+                    <div class="leaderboard-card">
+                        <div class="card-rank">4</div>
+                        <div class="card-user">
+                            <img src="https://ui-avatars.com/api/?name=Michael+B&background=334155&color=F8FAFC" class="card-avatar" alt="Michael">
+                            <div class="card-info"><h4>Michael B.</h4><p>CONSISTENT</p></div>
+                        </div>
+                        <div class="card-stat">18<span>Days</span></div>
+                    </div>
+                    <div class="leaderboard-card">
+                        <div class="card-rank">5</div>
+                        <div class="card-user">
+                            <img src="https://ui-avatars.com/api/?name=Elena+M&background=334155&color=F8FAFC" class="card-avatar" alt="Elena">
+                            <div class="card-info"><h4>Elena M.</h4><p>REGULAR</p></div>
+                        </div>
+                        <div class="card-stat">15<span>Days</span></div>
+                    </div>
+                    <div class="leaderboard-card">
+                        <div class="card-rank">6</div>
+                        <div class="card-user">
+                            <img src="https://ui-avatars.com/api/?name=Juan+Rodriguez&background=10B981&color=fff" class="card-avatar" alt="Me">
+                            <div class="card-info"><h4>Juan R. (You)</h4><p>ACTIVE</p></div>
+                        </div>
+                        <div class="card-stat">12<span>Days</span></div>
+                    </div>
+                    <div class="leaderboard-card">
+                        <div class="card-rank">7</div>
+                        <div class="card-user">
+                            <img src="https://ui-avatars.com/api/?name=Lisa+W&background=334155&color=F8FAFC" class="card-avatar" alt="Lisa">
+                            <div class="card-info"><h4>Lisa W.</h4><p>ACTIVE</p></div>
+                        </div>
+                        <div class="card-stat">9<span>Days</span></div>
+                    </div>
+                    <div class="leaderboard-card">
+                        <div class="card-rank">8</div>
+                        <div class="card-user">
+                            <img src="https://ui-avatars.com/api/?name=Marcus+J&background=334155&color=F8FAFC" class="card-avatar" alt="Marcus">
+                            <div class="card-info"><h4>Marcus J.</h4><p>ACTIVE</p></div>
+                        </div>
+                        <div class="card-stat">7<span>Days</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="user-status" class="user-status-bar">
+                <div class="user-status-main">
+                    <img src="https://ui-avatars.com/api/?name=Juan+Rodriguez&background=10B981&color=fff" class="status-avatar" alt="Me">
+                    <div class="status-info">
+                        <h4>Juan Rodriguez <span>(You)</span></h4>
+                    </div>
+                    <div id="status-val" class="status-main-stat">14,600 XP</div>
+                </div>
+                <div class="status-progress-track">
+                    <div id="status-fill" class="status-progress-fill"></div>
+                </div>
+                <div id="status-next" class="status-progress-meta">250 XP to #2</div>
+                <div id="status-quote" class="status-quote">
+                    Keep it up! You're only <b>250 XP</b> away from Michael B.!
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        function switchView(type, btn) {
+            // Update buttons
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            // Update views
+            document.querySelectorAll('.ranking-view').forEach(v => v.classList.remove('active'));
+            document.getElementById('view-' + type).classList.add('active');
+
+            // Update sticky status
+            const statusVal = document.getElementById('status-val');
+            const statusNext = document.getElementById('status-next');
+            const statusQuote = document.getElementById('status-quote');
+            const statusFill = document.getElementById('status-fill');
+
+            if (type === 'xp') {
+                statusVal.innerText = '14,600 XP';
+                statusNext.innerText = '250 XP to #2';
+                statusQuote.innerHTML = 'Keep it up! You\'re only <b>250 XP</b> away from Michael B.!';
+                statusFill.style.width = '80%';
+            } else {
+                statusVal.innerText = '12 Day Streak';
+                statusNext.innerText = '3 Days to #5';
+                statusQuote.innerHTML = 'Consistency is key! <b>3 more days</b> to beat Elena M.!';
+                statusFill.style.width = '60%';
+            }
+        }
+    </script>
+
+</body>
+</html>

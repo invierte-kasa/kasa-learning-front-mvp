@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kasa - Perfil de Usuario</title>
+    <style>
+        :root {
+            /* --- PALETA DARK MODE (Identical to index.html) --- */
+            --bg-body: #0F172A;      /* Azul noche profundo */
+            --bg-card: #1E293B;      /* Gris azulado para tarjetas */
+            --bg-hover: #334155;     /* Hover states */
+            --bg-icon-dim: rgba(255, 255, 255, 0.05); /* Fondo iconos inactivos */
+            
+            --text-main: #F8FAFC;    /* Blanco casi puro */
+            --text-muted: #94A3B8;   /* Gris texto secundario */
+            --text-disabled: #64748B; /* Texto muy apagado */
+            
+            --primary: #10B981;      /* Verde Kasa */
+            --primary-dark: #059669;
+            
+            --border: #334155;
+            --radius-card: 1.5rem;
+            --radius-item: 1rem;
+            
+            --nav-height-mobile: 80px;
+            --sidebar-width-desktop: 260px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            min-height: 100vh;
+        }
+
+        /* ========================================
+           LAYOUT PRINCIPAL (Identical to index.html)
+           ========================================
+        */
+        .layout-container {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* ========================================
+           NAVEGACIÓN (Identical to index.html)
+           ========================================
+        */
+        .main-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: var(--nav-height-mobile);
+            background-color: var(--bg-body);
+            border-top: 1px solid var(--border);
+            z-index: 100;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding-bottom: 10px; /* Safe area iOS */
+        }
+
+        .nav-logo-desktop { display: none; }
+
+        .nav-item {
+            text-decoration: none;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            cursor: pointer;
+            padding: 0.6rem;
+            border-radius: 1rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            width: 100%;
+            max-width: 80px;
+        }
+
+        .nav-item svg { 
+            width: 24px; 
+            height: 24px; 
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+        }
+        
+        .nav-item:hover:not(.active) { 
+            color: var(--text-main); 
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        
+        .nav-item:hover svg {
+            transform: scale(1.15) translateY(-2px);
+        }
+
+        .nav-item.active { 
+            color: var(--primary); 
+        }
+        
+        .nav-item.active svg {
+            transform: scale(1.1);
+        }
+
+        @media (min-width: 1024px) {
+            .layout-container { flex-direction: row; }
+            .main-nav {
+                position: sticky;
+                top: 0;
+                width: var(--sidebar-width-desktop);
+                height: 100vh;
+                flex-direction: column;
+                justify-content: flex-start;
+                padding: 2rem 1.5rem;
+                border-top: none;
+                border-right: 1px solid var(--border);
+                gap: 0.5rem;
+                align-items: stretch;
+            }
+            .nav-logo-desktop {
+                display: flex; align-items: center; gap: 0.75rem;
+                font-size: 1.5rem; font-weight: 800; margin-bottom: 3rem;
+                padding-left: 0.5rem; color: var(--text-main);
+                text-decoration: none;
+            }
+            .logo-box {
+                background-color: var(--primary); color: white;
+                width: 32px; height: 32px; border-radius: 8px;
+                display: flex; align-items: center; justify-content: center;
+                font-weight: 800; font-size: 1.2rem;
+            }
+            .nav-item { flex-direction: row; gap: 1rem; font-size: 0.95rem; padding: 1rem; max-width: 100%; justify-content: flex-start; }
+            .nav-item:hover { background-color: var(--bg-hover); }
+        }
+
+        /* --- Main Content --- */
+        .main-content {
+            flex: 1;
+            padding: 1.5rem;
+            padding-bottom: calc(var(--nav-height-mobile) + 1.5rem);
+            width: 100%;
+        }
+
+        @media (min-width: 1024px) {
+            .main-content {
+                padding: 3rem 4rem;
+                max-width: 900px;
+                margin: 0 auto;
+            }
+        }
+
+        /* --- Header --- */
+        .profile-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2.5rem;
+        }
+        .icon-btn {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-main);
+            cursor: pointer;
+        }
+
+        /* --- Profile Info --- */
+        .profile-hero {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .avatar-container {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+        .avatar-main {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            border: 4px solid var(--primary);
+            object-fit: cover;
+            box-shadow: 0 0 25px rgba(16, 185, 129, 0.2);
+        }
+        .lvl-badge {
+            position: absolute;
+            bottom: 5px;
+            right: 15px;
+            background-color: var(--primary);
+            color: #000;
+            font-weight: 800;
+            font-size: 0.75rem;
+            padding: 4px 12px;
+            border-radius: 999px;
+            border: 3px solid var(--bg-body);
+        }
+        .profile-hero h2 { font-size: 1.75rem; font-weight: 800; margin-bottom: 4px; }
+        .hero-role { color: var(--primary); font-weight: 700; font-size: 1rem; margin-bottom: 4px; }
+        .hero-member { color: var(--text-muted); font-size: 0.85rem; }
+
+        /* --- Stats Grid --- */
+        .stats-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .stat-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-card);
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+            background-color: var(--bg-hover);
+        }
+        .stat-card .val { font-size: 1.75rem; font-weight: 900; color: var(--primary); margin-bottom: 8px; display: block; }
+        .stat-card .label { 
+            font-size: 0.75rem; 
+            font-weight: 800; 
+            color: var(--text-muted); 
+            text-transform: uppercase; 
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        /* --- Experience Card --- */
+        .xp-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-card);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .xp-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 1rem;
+        }
+        .xp-card-title { font-size: 1.1rem; font-weight: 800; }
+        .xp-card-subtitle { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px;}
+        .xp-next-val { color: var(--primary); font-weight: 900; font-size: 1rem; }
+        
+        .xp-bar-bg {
+            width: 100%;
+            height: 14px;
+            background-color: var(--bg-body);
+            border-radius: 7px;
+            overflow: hidden;
+        }
+        .xp-bar-fill {
+            height: 100%;
+            width: 75%;
+            background-color: var(--primary);
+            border-radius: 7px;
+        }
+
+        /* --- Streak Section --- */
+        .streak-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-card);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .streak-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        .streak-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.25rem;
+            font-weight: 800;
+        }
+        .unstoppable-badge {
+            background-color: rgba(16, 185, 129, 0.1);
+            color: var(--primary);
+            font-size: 0.65rem;
+            font-weight: 900;
+            padding: 4px 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+        .days-grid {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+        }
+        .day-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        .day-circle {
+            width: 36px;
+            height: 36px;
+            background-color: var(--primary);
+            color: #000;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 0.85rem;
+        }
+        .check-dot {
+            width: 18px;
+            height: 18px;
+            background-color: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #000;
+        }
+
+        /* --- House Preview Card --- */
+        .house-mini-card {
+            background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.8) 100%), url('https://images.unsplash.com/photo-1518780664697-55e3ad937233?auto=format&fit=crop&q=80&w=800') center/cover;
+            border-radius: 2rem;
+            height: 180px;
+            width: 100%;
+            padding: 1.5rem;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+        .house-info h3 { font-size: 1.5rem; font-weight: 900; color: white; }
+        .house-info p { color: var(--primary); font-weight: 800; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; }
+        
+        .view-3d-btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-bottom: 4px solid var(--primary-dark);
+            padding: 12px 20px;
+            border-radius: 1rem;
+            font-weight: 800;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+            transition: all 0.15s ease;
+            text-transform: uppercase;
+        }
+
+        .view-3d-btn:hover {
+            filter: brightness(1.1);
+            transform: translateY(-2px);
+        }
+
+        .view-3d-btn:active {
+            transform: translateY(2px);
+            border-bottom-width: 0px;
+            margin-bottom: 4px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="layout-container">
+        
+        <!-- Identical Navigation to index.html -->
+        <nav class="main-nav">
+            <a href="index.html" class="nav-logo-desktop">
+                <div class="logo-box">K</div>
+                <span>Kasa</span>
+            </a>
+
+            <a href="index.html" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+                <span>Aprender</span>
+            </a>
+            <a href="ranking.html" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                <span>Ranking</span>
+            </a>
+            <a href="profile.html" class="nav-item active">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                <span>Perfil</span>
+            </a>
+        </nav>
+
+        <main class="main-content">
+            
+            <header class="profile-header">
+                <div class="icon-btn">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                </div>
+                <h2 style="font-weight: 800; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1px;">Perfil de Usuario</h2>
+                <div class="icon-btn">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
+                </div>
+            </header>
+
+            <section class="profile-hero">
+                <div class="avatar-container">
+                    <img src="https://ui-avatars.com/api/?name=Juan+Rodriguez&background=10B981&color=fff" class="avatar-main" alt="Juan">
+                    <div class="lvl-badge">LVL 5</div>
+                </div>
+                <h2>Juan Rodriguez</h2>
+                <p class="hero-role">Real Estate Apprentice</p>
+                <p class="hero-member">Miembro desde Ene 2024</p>
+            </section>
+
+            <section class="stats-row">
+                <div class="stat-card">
+                    <span class="val">8/10</span>
+                    <span class="label">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                        Módulos
+                    </span>
+                </div>
+                <div class="stat-card">
+                    <span class="val">12</span>
+                    <span class="label">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
+                        Logros
+                    </span>
+                </div>
+            </section>
+
+            <section class="xp-card">
+                <p class="xp-card-subtitle">Faltan 468 XP para el Nivel 6</p>
+                <div class="xp-card-header">
+                    <span class="xp-card-title">Experiencia</span>
+                    <span class="xp-next-val">4,532 / 5,000 XP</span>
+                </div>
+                <div class="xp-bar-bg">
+                    <div class="xp-bar-fill"></div>
+                </div>
+            </section>
+
+            <section class="streak-card">
+                <div class="streak-header">
+                    <div class="streak-title">
+                        <span style="font-size: 1.5rem;">🔥</span>
+                        Racha de 7 días
+                    </div>
+                    <span class="unstoppable-badge">¡IMPARABLE!</span>
+                </div>
+                <div class="days-grid">
+                    <div class="day-item">
+                        <div class="day-circle">L</div>
+                        <div class="check-dot"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+                    </div>
+                    <div class="day-item">
+                        <div class="day-circle">M</div>
+                        <div class="check-dot"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+                    </div>
+                    <div class="day-item">
+                        <div class="day-circle">M</div>
+                        <div class="check-dot"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+                    </div>
+                    <div class="day-item">
+                        <div class="day-circle">J</div>
+                        <div class="check-dot"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+                    </div>
+                    <div class="day-item">
+                        <div class="day-circle">V</div>
+                        <div class="check-dot"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+                    </div>
+                    <div class="day-item">
+                        <div class="day-circle">S</div>
+                        <div class="check-dot"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+                    </div>
+                    <div class="day-item">
+                        <div class="day-circle">D</div>
+                        <div class="check-dot"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="house-mini-card">
+                <div class="house-info">
+                    <p>Nivel: Cabaña Moderna</p>
+                    <h3>Tu Casa</h3>
+                </div>
+                <button class="view-3d-btn">
+                    VER 3D
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"></path><path d="M9 21H3v-6"></path><path d="M21 3l-7 7"></path><path d="M3 21l7-7"></path></svg>
+                </button>
+            </section>
+
+        </main>
+    </div>
+
+</body>
+</html>

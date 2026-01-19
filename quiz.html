@@ -1,0 +1,865 @@
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Kasa - Quiz de Fundamentos</title>
+        <style>
+            :root {
+                --bg-body: #0F172A;
+                --bg-card: #1E293B;
+                --bg-hover: #334155;
+                --text-main: #F8FAFC;
+                --text-muted: #94A3B8;
+                --text-disabled: #64748B;
+                --primary: #10B981;
+                --primary-dark: #059669;
+                --error: #EF4444;
+                --border: #334155;
+                --radius: 1rem;
+            }
+
+            * {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            }
+
+            body {
+                background-color: var(--bg-body);
+                color: var(--text-main);
+                min-height: 100vh;
+                display: flex;
+                flex-direction: column;
+                overflow-x: hidden;
+            }
+
+            .quiz-container {
+                max-width: 600px;
+                width: 100%;
+                margin: 0 auto;
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                padding: 1.5rem;
+            }
+
+            /* --- Quiz Header --- */
+            .quiz-header {
+                display: flex;
+                align-items: center;
+                gap: 1.5rem;
+                margin-bottom: 2.5rem;
+                padding-top: 1rem;
+            }
+
+            .quit-btn {
+                background: none;
+                border: none;
+                color: var(--text-muted);
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+            }
+
+            .progress-bar-container {
+                flex: 1;
+                height: 12px;
+                background-color: var(--bg-card);
+                border-radius: 6px;
+                overflow: hidden;
+            }
+
+            .progress-bar-fill {
+                height: 100%;
+                background-color: var(--primary);
+                width: 0%;
+                transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+            }
+
+            /* --- Question Area --- */
+            #quiz-content {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+            }
+
+            .question-title {
+                font-size: 1.5rem;
+                font-weight: 800;
+                margin-bottom: 2rem;
+                line-height: 1.3;
+            }
+
+            /* Types: Options */
+            .options-grid {
+                display: flex;
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+
+            .option-card {
+                background-color: var(--bg-card);
+                border: 2px solid var(--border);
+                border-radius: var(--radius);
+                padding: 1.25rem;
+                cursor: pointer;
+                transition: all 0.2s;
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+                font-weight: 600;
+            }
+
+            .option-card:hover {
+                border-color: var(--text-muted);
+                background-color: var(--bg-hover);
+            }
+
+            .option-card.selected {
+                border-color: var(--primary);
+                background-color: rgba(16, 185, 129, 0.1);
+            }
+
+            .option-number {
+                width: 30px;
+                height: 30px;
+                border-radius: 8px;
+                border: 1px solid var(--border);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 0.8rem;
+                color: var(--text-muted);
+            }
+
+            .selected .option-number {
+                background-color: var(--primary);
+                color: white;
+                border-color: var(--primary);
+            }
+
+            /* Typing Area */
+            .typing-container {
+                margin-top: 1rem;
+            }
+            
+            .quiz-input {
+                width: 100%;
+                background-color: var(--bg-card);
+                border: 2px solid var(--border);
+                border-radius: var(--radius);
+                padding: 1.5rem;
+                color: var(--text-main);
+                font-size: 1.1rem;
+                outline: none;
+                transition: border-color 0.2s;
+            }
+
+            .quiz-input:focus {
+                border-color: var(--primary);
+            }
+
+            /* --- Drag and Drop Styles (Click to Place) --- */
+            .cloze-sentence {
+                font-size: 1.3rem;
+                line-height: 2.2;
+                margin-bottom: 3rem;
+                text-align: center;
+            }
+
+            .drop-zone {
+                display: inline-flex;
+                min-width: 100px;
+                height: 40px;
+                background-color: rgba(255, 255, 255, 0.05);
+                border-bottom: 3px solid var(--border);
+                margin: 0 8px;
+                vertical-align: middle;
+                border-radius: 4px;
+                align-items: center;
+                justify-content: center;
+                transition: all 0.2s;
+            }
+
+            .drop-zone.has-word {
+                background-color: var(--bg-card);
+                border-bottom: 3px solid var(--primary);
+                color: var(--text-main);
+                padding: 0 15px;
+                font-weight: 700;
+            }
+
+            .word-pool {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 12px;
+                margin-top: auto;
+                padding: 1rem 0;
+            }
+
+            .pool-word {
+                background-color: var(--bg-card);
+                border: 2px solid var(--border);
+                border-radius: 12px;
+                padding: 10px 20px;
+                font-weight: 700;
+                cursor: pointer;
+                transition: all 0.2s;
+                box-shadow: 0 3px 0 var(--border);
+                user-select: none;
+            }
+
+            .pool-word:active {
+                transform: translateY(2px);
+                box-shadow: none;
+            }
+
+            .pool-word.used {
+                opacity: 0.3;
+                background-color: transparent;
+                border-style: dashed;
+                box-shadow: none;
+                cursor: default;
+            }
+
+            /* --- Bottom Footer --- */
+            .quiz-footer {
+                border-top: 2px solid var(--border);
+                padding: 1.5rem 0;
+                margin-top: 2rem;
+                display: flex;
+                justify-content: flex-end;
+            }
+
+            .btn-check {
+                background-color: var(--primary);
+                color: white;
+                border: none;
+                border-radius: 12px;
+                padding: 1rem 2.5rem;
+                font-weight: 800;
+                font-size: 1rem;
+                cursor: pointer;
+                transition: background 0.2s, transform 0.1s;
+                box-shadow: 0 4px 0 #059669;
+            }
+
+            .btn-check:disabled {
+                background-color: var(--bg-card);
+                color: var(--text-disabled);
+                box-shadow: none;
+                cursor: not-allowed;
+            }
+
+            .btn-check:active {
+                transform: translateY(2px);
+                box-shadow: 0 2px 0 #059669;
+            }
+
+            /* Success/Failure feedback */
+            .feedback-overlay {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                padding: 2rem;
+                display: none;
+                align-items: center;
+                justify-content: space-between;
+                z-index: 100;
+            }
+
+            .feedback-overlay.correct {
+                display: flex;
+                background-color: #064e3b;
+                color: #ecfdf5;
+            }
+
+            .feedback-overlay.wrong {
+                display: flex;
+                background-color: #7f1d1d;
+                color: #fee2e2;
+            }
+
+            /* --- Results Screen Styles --- */
+            #results-screen {
+                display: none;
+                flex-direction: column;
+                animation: fadeIn 0.5s ease-out;
+                padding-bottom: 2rem;
+            }
+
+            .results-header {
+                text-align: center;
+                margin: 1.5rem 0 2.5rem;
+            }
+
+            .check-circle-large {
+                width: 90px;
+                height: 90px;
+                border: 4px solid var(--primary);
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: var(--primary);
+                margin: 0 auto 1.5rem;
+                box-shadow: 0 0 30px rgba(16, 185, 129, 0.2);
+                background-color: rgba(16, 185, 129, 0.1);
+            }
+
+            .results-title {
+                font-size: 2.5rem;
+                font-weight: 900;
+                margin-bottom: 0.5rem;
+            }
+
+            .results-sub {
+                color: var(--primary);
+                font-weight: 700;
+                font-size: 1.1rem;
+            }
+
+            .score-card {
+                background-color: var(--bg-card);
+                border-radius: 1.5rem;
+                padding: 1.5rem 2rem;
+                width: 100%;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 1rem;
+                border: 1px solid var(--border);
+            }
+
+            .score-info h5 {
+                font-size: 0.75rem;
+                color: var(--text-muted);
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                margin-bottom: 0.5rem;
+            }
+
+            .score-val {
+                font-size: 1.75rem;
+                font-weight: 800;
+            }
+
+            .percentage-val {
+                font-size: 2.2rem;
+                font-weight: 900;
+                color: var(--primary);
+            }
+
+            .rewards-grid {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 12px;
+                width: 100%;
+                margin-bottom: 1.5rem;
+            }
+
+            .reward-item {
+                background-color: var(--bg-card);
+                border: 1px solid var(--border);
+                border-radius: 1.25rem;
+                padding: 1.25rem 0.5rem;
+                text-align: center;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 0.5rem;
+            }
+
+            .reward-icon-circle {
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin-bottom: 4px;
+            }
+
+            .reward-label {
+                font-size: 0.75rem;
+                font-weight: 700;
+                color: var(--text-muted);
+            }
+
+            /* Upgraded Casa Card */
+            .upgrade-card {
+                background-color: #1a273a;
+                border-radius: 1.5rem;
+                padding: 1.5rem;
+                width: 100%;
+                border: 1px solid rgba(16, 185, 129, 0.2);
+                position: relative;
+                margin-bottom: 2rem;
+                text-align: left;
+            }
+
+            .upgrade-header-info {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                margin-bottom: 1.25rem;
+            }
+
+            .upgrade-card h4 {
+                font-size: 1.1rem;
+                font-weight: 800;
+                margin-bottom: 0.25rem;
+            }
+
+            .upgrade-card p {
+                font-size: 0.85rem;
+                color: var(--text-muted);
+            }
+
+            .house-preview {
+                width: 100%;
+                height: 180px;
+                background-color: #0c121e;
+                border-radius: 1rem;
+                overflow: hidden;
+                position: relative;
+            }
+
+            .house-preview img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                opacity: 0.7;
+            }
+
+            .level-badge {
+                position: absolute;
+                bottom: 12px;
+                left: 12px;
+                background-color: rgba(16, 185, 129, 0.8);
+                backdrop-filter: blur(4px);
+                color: white;
+                padding: 4px 12px;
+                border-radius: 999px;
+                font-size: 0.65rem;
+                font-weight: 800;
+                text-transform: uppercase;
+            }
+
+            .floating-house-icon {
+                position: absolute;
+                bottom: -15px;
+                right: 15px;
+                width: 50px;
+                height: 50px;
+                background-color: var(--primary);
+                border-radius: 15px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
+                border: 4px solid #1a273a;
+                color: white;
+            }
+
+            .results-actions {
+                width: 100%;
+                display: flex;
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+
+            .btn-results-main {
+                background-color: var(--primary);
+                color: white;
+                padding: 1.1rem;
+                border-radius: 1rem;
+                font-weight: 800;
+                font-size: 1rem;
+                border: none;
+                cursor: pointer;
+                width: 100%;
+                box-shadow: 0 4px 0 var(--primary-dark);
+                text-align: center;
+                text-decoration: none;
+            }
+
+            .btn-results-secondary {
+                background-color: transparent;
+                color: var(--text-main);
+                padding: 1.1rem;
+                border-radius: 1rem;
+                font-weight: 800;
+                font-size: 1rem;
+                border: 2px solid var(--border);
+                cursor: pointer;
+                width: 100%;
+                text-decoration: none;
+                text-align: center;
+            }
+
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(20px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+        </style>
+    </head>
+    <body>
+
+        <div class="quiz-container">
+            
+            <header class="quiz-header" id="quiz-header">
+                <button class="quit-btn" onclick="window.history.back()">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+                <div class="progress-bar-container">
+                    <div class="progress-bar-fill" id="progress-fill"></div>
+                </div>
+            </header>
+
+            <div id="quiz-content">
+                <!-- Content dynamic via JS -->
+            </div>
+
+            <!-- RESULTS SCREEN -->
+            <div id="results-screen">
+                <div class="results-header">
+                    <div class="check-circle-large">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    </div>
+                    <h1 class="results-title">Excellent!</h1>
+                    <p class="results-sub">You passed the module</p>
+                </div>
+
+                <div class="score-card">
+                    <div class="score-info">
+                        <h5>Total Score</h5>
+                        <div class="score-val" id="final-score-text">0/7</div>
+                    </div>
+                    <div class="percentage-val" id="final-percentage">0%</div>
+                </div>
+
+                <div class="rewards-grid">
+                    <div class="reward-item">
+                        <div class="reward-icon-circle" style="background-color: rgba(16, 185, 129, 0.1); color: var(--primary);">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
+                        </div>
+                        <span class="reward-label">+250 XP</span>
+                    </div>
+                    <div class="reward-item">
+                        <div class="reward-icon-circle" style="background-color: rgba(245, 158, 11, 0.1); color: #f59e0b;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 2v20M2 12h20"></path></svg>
+                        </div>
+                        <span class="reward-label">+1 Streak</span>
+                    </div>
+                    <div class="reward-item">
+                        <div class="reward-icon-circle" style="background-color: rgba(59, 130, 246, 0.1); color: #3b82f6;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>
+                        </div>
+                        <span class="reward-label">+1 Badge</span>
+                    </div>
+                </div>
+
+                <div class="upgrade-card">
+                    <div class="upgrade-header-info">
+                        <div>
+                            <h4>Your Casa Upgraded!</h4>
+                            <p>New solar panels installed</p>
+                        </div>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                    </div>
+                    
+                    <div class="house-preview">
+                        <img src="https://images.unsplash.com/photo-1518780664697-55e3ad937233?auto=format&fit=crop&q=80&w=1000" alt="Upgraded Casa">
+                        <div class="level-badge">LVL 12 NEIGHBORHOOD</div>
+                    </div>
+
+                    <div class="floating-house-icon">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                    </div>
+                </div>
+
+                <div class="results-actions">
+                    <a href="sections.html" class="btn-results-main">Next Module</a>
+                    <a href="quiz.html" class="btn-results-secondary">Retry Quiz</a>
+                </div>
+            </div>
+
+            <div class="quiz-footer" id="quiz-footer">
+                <button id="main-action-btn" class="btn-check" disabled onclick="handleMainAction()">COMPROBAR</button>
+            </div>
+
+        </div>
+
+        <!-- Correct/Wrong Feedbacks -->
+        <div id="feedback" class="feedback-overlay">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <div id="feedback-icon-bg" style="background: white; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; color: #059669;">
+                    <svg id="feedback-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+                <div>
+                    <h3 id="feedback-title" style="font-weight: 800; font-size: 1.25rem;">¡Impresionante!</h3>
+                    <p id="feedback-sub" style="opacity: 0.9;">Vas por buen camino.</p>
+                </div>
+            </div>
+            <button id="feedback-btn" class="btn-check" style="background: white; color: #059669; box-shadow: 0 4px 0 #d1fae5;" onclick="nextQuestion()">CONTINUAR</button>
+        </div>
+
+        <script>
+            const questions = [
+                {
+                    type: 'choice',
+                    title: '¿Qué es el flujo de caja (Cash Flow) en una inversión inmobiliaria?',
+                    options: [
+                        'El valor total de mercado de la propiedad.',
+                        'El dinero neto que queda mensualmente tras pagar todos los gastos.',
+                        'El impuesto que se paga al comprar un inmueble.',
+                        'La velocidad con la que se vende una propiedad.'
+                    ],
+                    correct: 1
+                },
+                {
+                    type: 'cloze',
+                    title: 'Completa el significado fundamental:',
+                    sentence: 'Un flujo de caja [gap] permite reinvertir, mientras que uno [gap] requiere poner dinero propio.',
+                    pool: ['positivo', 'negativo', 'nulo', 'catastral'],
+                    correct: ['positivo', 'negativo']
+                },
+                {
+                    type: 'choice',
+                    title: 'Si los gastos son mayores que los ingresos, el flujo de caja es...',
+                    options: ['Positivo', 'Nulo', 'Negativo', 'Variable'],
+                    correct: 2
+                },
+                {
+                    type: 'input',
+                    title: 'Termina la frase: El Cash Flow es el alma de cualquier...',
+                    placeholder: 'Escribe la palabra faltante',
+                    correct: 'inversion'
+                },
+                {
+                    type: 'cloze',
+                    title: 'Une los conceptos correctamente:',
+                    sentence: 'Los ingresos [gap] menos los gastos [gap] resultan en el Cash Flow.',
+                    pool: ['brutos', 'operativos', 'netos', 'fijos'],
+                    correct: ['brutos', 'operativos']
+                },
+                {
+                    type: 'input',
+                    title: 'Si cobras $1000 de renta y gastas $700 en hipoteca y mantenimento, ¿cuál es tu flujo de caja?',
+                    placeholder: 'Ingresa el monto numérico',
+                    correct: '300'
+                },
+                {
+                    type: 'choice',
+                    title: '¿Cuál es el principal beneficio de tener Cash Flow?',
+                    options: [
+                        'Sustentabilidad del activo a largo plazo.',
+                        'Pagar más comisiones al banco.',
+                        'Reducir el tamaño de la propiedad.',
+                        'Ninguna de las anteriores.'
+                    ],
+                    correct: 0
+                }
+            ];
+
+            let currentQuestionIdx = 0;
+            let selectedOption = null;
+            let filledGaps = [];
+            let correctAnswersCount = 0;
+
+            function renderQuestion() {
+                const q = questions[currentQuestionIdx];
+                const content = document.getElementById('quiz-content');
+                const actionBtn = document.getElementById('main-action-btn');
+                
+                actionBtn.disabled = true;
+                actionBtn.innerText = 'COMPROBAR';
+                selectedOption = null;
+                filledGaps = [];
+
+                let html = `<h2 class="question-title">${q.title}</h2>`;
+
+                if (q.type === 'choice') {
+                    html += `<div class="options-grid">`;
+                    q.options.forEach((opt, i) => {
+                        html += `
+                            <div class="option-card" onclick="selectOption(${i})">
+                                <div class="option-number">${i + 1}</div>
+                                <span>${opt}</span>
+                            </div>
+                        `;
+                    });
+                    html += `</div>`;
+                } else if (q.type === 'input') {
+                    html += `
+                        <div class="typing-container">
+                            <input type="text" class="quiz-input" id="typing-input" autocomplete="off" placeholder="${q.placeholder}" oninput="handleTyping(this)">
+                        </div>
+                    `;
+                } else if (q.type === 'cloze') {
+                    const parts = q.sentence.split('[gap]');
+                    html += `<div class="cloze-sentence">`;
+                    parts.forEach((part, i) => {
+                        html += part;
+                        if (i < parts.length - 1) {
+                            html += `<div class="drop-zone" id="gap-${i}" onclick="clearGap(${i})"></div>`;
+                            filledGaps.push(null);
+                        }
+                    });
+                    html += `</div>`;
+
+                    html += `<div class="word-pool">`;
+                    q.pool.forEach((word, i) => {
+                        html += `<div class="pool-word" id="word-${i}" onclick="toggleWord('${word}', ${i})">${word}</div>`;
+                    });
+                    html += `</div>`;
+                }
+
+                content.innerHTML = html;
+                updateProgressBar();
+            }
+
+            function selectOption(idx) {
+                const cards = document.querySelectorAll('.option-card');
+                cards.forEach(c => c.classList.remove('selected'));
+                cards[idx].classList.add('selected');
+                selectedOption = idx;
+                document.getElementById('main-action-btn').disabled = false;
+            }
+
+            function handleTyping(input) {
+                document.getElementById('main-action-btn').disabled = input.value.trim().length === 0;
+            }
+
+            function toggleWord(word, index) {
+                const wordEl = document.getElementById(`word-${index}`);
+                if (wordEl.classList.contains('used')) return;
+
+                // Encontrar el primer gap vacío
+                const emptyGapIdx = filledGaps.findIndex(g => g === null);
+                if (emptyGapIdx !== -1) {
+                    filledGaps[emptyGapIdx] = { word, poolIdx: index };
+                    wordEl.classList.add('used');
+                    
+                    const gapEl = document.getElementById(`gap-${emptyGapIdx}`);
+                    gapEl.innerText = word;
+                    gapEl.classList.add('has-word');
+
+                    checkClozeReady();
+                }
+            }
+
+            function clearGap(gapIdx) {
+                if (filledGaps[gapIdx]) {
+                    const poolIdx = filledGaps[gapIdx].poolIdx;
+                    document.getElementById(`word-${poolIdx}`).classList.remove('used');
+                    
+                    const gapEl = document.getElementById(`gap-${gapIdx}`);
+                    gapEl.innerText = '';
+                    gapEl.classList.remove('has-word');
+                    
+                    filledGaps[gapIdx] = null;
+                    checkClozeReady();
+                }
+            }
+
+            function checkClozeReady() {
+                const allFilled = filledGaps.every(g => g !== null);
+                document.getElementById('main-action-btn').disabled = !allFilled;
+            }
+
+            function handleMainAction() {
+                const q = questions[currentQuestionIdx];
+                let isCorrect = false;
+
+                if (q.type === 'choice') {
+                    isCorrect = (selectedOption === q.correct);
+                } else if (q.type === 'input') {
+                    const val = document.getElementById('typing-input').value.toLowerCase().trim();
+                    const expected = q.correct.toLowerCase();
+                    isCorrect = (val === expected || val.includes(expected));
+                } else if (q.type === 'cloze') {
+                    isCorrect = filledGaps.every((g, i) => g && g.word === q.correct[i]);
+                }
+
+                if (isCorrect) {
+                    correctAnswersCount++;
+                }
+                showFeedback(isCorrect);
+            }
+
+            function showFeedback(isCorrect) {
+                const feedback = document.getElementById('feedback');
+                const iconBg = document.getElementById('feedback-icon-bg');
+                const icon = document.getElementById('feedback-icon');
+                const title = document.getElementById('feedback-title');
+                const sub = document.getElementById('feedback-sub');
+                const btn = document.getElementById('feedback-btn');
+
+                feedback.className = 'feedback-overlay ' + (isCorrect ? 'correct' : 'wrong');
+                
+                if (isCorrect) {
+                    iconBg.style.color = '#059669';
+                    icon.innerHTML = '<polyline points="20 6 9 17 4 12"></polyline>';
+                    title.innerText = '¡Impresionante!';
+                    sub.innerText = 'Vas por buen camino.';
+                    btn.style.color = '#059669';
+                    btn.style.boxShadow = '0 4px 0 #d1fae5';
+                } else {
+                    iconBg.style.color = '#7f1d1d';
+                    icon.innerHTML = '<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>';
+                    title.innerText = 'Respuesta Incorrecta';
+                    sub.innerText = '¡Tú puedes, inténtalo de nuevo!';
+                    btn.style.color = '#7f1d1d';
+                    btn.style.background = 'white';
+                    btn.style.boxShadow = '0 4px 0 #fee2e2';
+                }
+
+                feedback.style.display = 'flex';
+            }
+
+            function nextQuestion() {
+                const feedback = document.getElementById('feedback');
+                // Si estaba mal, repetimos la pregunta o seguimos (estilo Duolingo suele seguir pero quita vida)
+                // Por simplicidad en este MVP, seguiremos siempre
+                currentQuestionIdx++;
+                feedback.style.display = 'none';
+
+                if (currentQuestionIdx < questions.length) {
+                    renderQuestion();
+                } else {
+                    showCongrats();
+                }
+            }
+
+            function updateProgressBar() {
+                const fill = document.getElementById('progress-fill');
+                const percentage = (currentQuestionIdx / questions.length) * 100;
+                fill.style.width = percentage + '%';
+            }
+
+            function showCongrats() {
+                document.getElementById('quiz-header').style.display = 'none';
+                document.getElementById('quiz-content').style.display = 'none';
+                document.getElementById('quiz-footer').style.display = 'none';
+                
+                // Calculate and show results
+                const percentage = Math.round((correctAnswersCount / questions.length) * 100);
+                document.getElementById('final-score-text').innerText = `${correctAnswersCount}/${questions.length}`;
+                document.getElementById('final-percentage').innerText = `${percentage}%`;
+
+                document.getElementById('results-screen').style.display = 'flex';
+                document.getElementById('progress-fill').style.width = '100%';
+            }
+
+            // Init
+            renderQuestion();
+        </script>
+    </body>
+    </html>
