@@ -17,6 +17,8 @@
             --border: #334155;
             --radius-card: 1.5rem;
             --radius-btn: 999px;
+            --nav-height-mobile: 80px;
+            --sidebar-width-desktop: 260px;
         }
 
         * {
@@ -51,14 +53,14 @@
             bottom: 0;
             left: 0;
             width: 100%;
-            height: var(--nav-height-mobile);
+            height: calc(var(--nav-height-mobile) + env(safe-area-inset-bottom));
             background-color: var(--bg-body);
             border-top: 1px solid var(--border);
-            z-index: 50;
+            z-index: 100;
             display: flex;
             justify-content: space-around;
             align-items: center;
-            padding-bottom: 10px;
+            padding-bottom: env(safe-area-inset-bottom);
         }
 
         .nav-logo-desktop { display: none; }
@@ -326,16 +328,17 @@
         /* --- Footer Actions --- */
         .lesson-actions {
             position: fixed;
-            bottom: var(--nav-height-mobile);
+            bottom: calc(var(--nav-height-mobile) + env(safe-area-inset-bottom));
             left: 0;
             width: 100%;
             padding: 1.5rem;
-            background: linear-gradient(to top, var(--bg-body) 80%, transparent);
+            padding-bottom: 2.5rem;
+            background: linear-gradient(to top, var(--bg-body) 90%, transparent);
             display: flex;
             flex-direction: column;
-            align-items: center; /* Centering buttons */
+            align-items: center;
             gap: 0.75rem;
-            z-index: 40;
+            z-index: 90;
         }
 
         @media (min-width: 1024px) {
@@ -400,6 +403,25 @@
 
     <div class="layout-container">
         
+        <nav class="main-nav">
+            <div class="nav-logo-desktop">
+                <div class="logo-box">K</div>
+                <span>Kasa</span>
+            </div>
+
+            <a href="index.html" class="nav-item active">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+                <span>Aprender</span>
+            </a>
+            <a href="ranking.html" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                <span>Ranking</span>
+            </a>
+            <a href="profile.html" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                <span>Perfil</span>
+            </a>
+        </nav>
 
 
         <main class="main-content">

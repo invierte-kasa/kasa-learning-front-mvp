@@ -59,14 +59,14 @@
             bottom: 0;
             left: 0;
             width: 100%;
-            height: var(--nav-height-mobile);
+            height: calc(var(--nav-height-mobile) + env(safe-area-inset-bottom));
             background-color: var(--bg-body);
             border-top: 1px solid var(--border);
             z-index: 50;
             display: flex;
             justify-content: space-around;
             align-items: center;
-            padding-bottom: 10px; /* Safe area iOS */
+            padding-bottom: env(safe-area-inset-bottom);
         }
 
         .nav-logo-desktop { display: none; }
