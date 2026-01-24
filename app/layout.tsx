@@ -13,6 +13,8 @@ export const metadata: Metadata = {
   description: 'Aprende a invertir en bienes raices con Kasa',
 }
 
+import { UserProvider } from '@/context/UserContext'
+
 export default function RootLayout({
   children,
 }: {
@@ -21,7 +23,9 @@ export default function RootLayout({
   return (
     <html lang="es" className={`dark ${inter.variable}`}>
       <body className="bg-kasa-body text-white min-h-screen font-sans antialiased">
-        {children}
+        <UserProvider>
+          {children}
+        </UserProvider>
       </body>
     </html>
   )

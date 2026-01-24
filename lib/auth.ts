@@ -1,7 +1,7 @@
 import { User } from '@/types'
 
 // Cookie name for shared authentication
-const AUTH_COOKIE_NAME = 'kasa_session'
+const AUTH_COOKIE_NAME = 'kasa_learn_auth'
 
 // Mock user data for development
 const mockUser: User = {
