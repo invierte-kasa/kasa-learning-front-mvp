@@ -1,0 +1,92 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-body: #0F172A;
+  --bg-card: #1E293B;
+  --bg-hover: #334155;
+  --bg-icon-dim: rgba(255, 255, 255, 0.05);
+  --text-main: #F8FAFC;
+  --text-muted: #94A3B8;
+  --text-disabled: #64748B;
+  --primary: #10B981;
+  --primary-dark: #059669;
+  --border: #334155;
+  --radius-card: 1.5rem;
+  --radius-item: 1rem;
+  --nav-height-mobile: 80px;
+  --sidebar-width-desktop: 260px;
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    @apply bg-kasa-body text-white min-h-screen font-sans;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply w-full p-4 bg-kasa-primary text-white border-none rounded-2xl font-extrabold text-base cursor-pointer flex items-center justify-center gap-2 transition-all uppercase tracking-wide;
+    border-bottom: 4px solid var(--primary-dark);
+  }
+
+  .btn-primary:hover {
+    @apply -translate-y-0.5;
+    filter: brightness(1.1);
+  }
+
+  .btn-primary:active {
+    @apply translate-y-0.5;
+    border-bottom-width: 0px;
+    margin-bottom: 4px;
+  }
+
+  .btn-secondary {
+    @apply bg-kasa-card text-white border border-kasa-border p-4 rounded-2xl font-semibold text-base cursor-pointer text-center;
+  }
+
+  .btn-secondary:hover {
+    @apply bg-kasa-hover;
+  }
+
+  .card {
+    @apply bg-kasa-card border border-kasa-border rounded-card overflow-hidden flex flex-col;
+  }
+
+  .section-title {
+    @apply text-xs uppercase tracking-widest text-text-muted font-bold mb-4 flex items-center gap-2;
+  }
+
+  .stat-label {
+    @apply text-xs uppercase tracking-widest text-text-muted font-bold mb-1;
+  }
+
+  .stat-value {
+    @apply text-xl font-extrabold text-white;
+  }
+
+  .progress-track {
+    @apply h-2 bg-kasa-body rounded;
+  }
+
+  .progress-fill {
+    @apply h-full bg-kasa-primary rounded;
+  }
+}
+
+@layer utilities {
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
