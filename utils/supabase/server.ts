@@ -4,6 +4,11 @@ export const createClient = async () => {
   const { cookies } = await import("next/headers");
   const cookieStore = await cookies();
 
+  const host = cookieStore.get('host')?.value || ''; // Note: headers() is better for host
+  // Re-importing headers for host
+  const { headers } = await import("next/headers");
+  const hostName = (await headers()).get('host') || '';
+
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -26,6 +31,10 @@ export const createClient = async () => {
       },
       cookieOptions: {
         name: 'kasa_learn_auth',
+        domain: hostName.includes('inviertekasa.com') ? '.inviertekasa.com' : undefined,
+        path: '/',
+        sameSite: 'lax',
+        secure: true,
       },
     }
   );

@@ -7,6 +7,12 @@ export const createClient = () =>
     {
       cookieOptions: {
         name: 'kasa_learn_auth',
+        domain: typeof window !== 'undefined' && window.location.hostname.includes('inviertekasa.com')
+          ? '.inviertekasa.com'
+          : undefined,
+        path: '/',
+        sameSite: 'lax',
+        secure: true,
       },
     }
   );
