@@ -1,6 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  basePath: '/protected/learn',
   images: {
     domains: ['ui-avatars.com', 'images.unsplash.com'],
   },
