@@ -12,7 +12,7 @@ export const updateSession = async (request: NextRequest) => {
 
     // Definir la URL principal para redirigir si no hay sesión
     // Ajusta esto a tu dominio real de producción
-    const MAIN_APP_URL = process.env.NEXT_PUBLIC_MAIN_APP_URL || 'https://www.inviertekasa.com';
+    const MAIN_APP_URL = process.env.NEXT_PUBLIC_MAIN_APP_URL || 'https://kasa-frontend-dev-git-dev-inviert-kasas-projects.vercel.app';
 
     // 2. Cliente Supabase (SIN cookieOptions personalizadas)
     const supabase = createServerClient(
