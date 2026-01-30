@@ -70,11 +70,12 @@ export function useUser() {
     return context;
 }
 
+const supabase = createClient();
+
 export function UserProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<UserProfile | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const supabase = createClient();
 
     const getAuthHeader = async () => {
         const { data: { session } } = await supabase.auth.getSession();
@@ -87,11 +88,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
             const token = session?.access_token;
 
             if (!token) {
-                // Si no hay sesión, no podemos autenticar la llamada a la Edge Function si esta lo requiere.
-                // Según el código del usuario, usa getAuthenticatedUser(req), así que se requiere token.
-                // Sin embargo, si es pública para ver perfiles, quizás no. 
-                // Pero el código dice "Ensure the requester is authenticated".
-                console.warn("No session for getProfileImage");
                 return null;
             }
 
@@ -104,26 +100,23 @@ export function UserProvider({ children }: { children: ReactNode }) {
                 }
             );
 
-            if (!response.ok) {
-                console.error(`Error fetching profile image for ${userId}:`, response.statusText);
-                return null;
-            }
+            if (!response.ok) return null;
             const data = await response.json();
             return data.avatar_url;
         } catch (err) {
             console.error("Error in getProfileImage:", err);
             return null;
         }
-    }, [supabase]);
+    }, []);
 
     const refreshUser = useCallback(async () => {
         try {
             setLoading(true);
             setError(null);
 
-            const { data: { session } } = await supabase.auth.getSession();
+            const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
-            if (!session) {
+            if (sessionError || !session) {
                 setUser(null);
                 setLoading(false);
                 return;
@@ -140,8 +133,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
             }
 
             const data = await response.json();
-
-            // Fetch latest avatar from the new endpoint
             const avatarUrl = await getProfileImage(session.user.id);
             if (avatarUrl) {
                 data.avatar_url = avatarUrl;
@@ -149,13 +140,13 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
             setUser(data);
         } catch (err: any) {
-            console.error("Error loading user profile:", err);
+            console.error("Error in refreshUser:", err);
             setError(err.message || "Error cargando perfil");
             setUser(null);
         } finally {
             setLoading(false);
         }
-    }, [supabase, getProfileImage]);
+    }, [getProfileImage]);
 
     // Submit Verification (POST /profile/verification)
     const submitVerification = async (formData: FormData) => {
@@ -166,20 +157,13 @@ export function UserProvider({ children }: { children: ReactNode }) {
             `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/profile/verification`,
             {
                 method: "POST",
-                headers: {
-                    ...headers,
-                    // Note: Content-Type for FormData is set automatically by fetch
-                },
+                headers: { ...headers },
                 body: formData,
             }
         );
 
         const data = await response.json();
-        if (!response.ok) {
-            throw new Error(data.error || data.message || "Error submitting verification");
-        }
-
-        // Refresh user data after submission to get updated status
+        if (!response.ok) throw new Error(data.error || data.message || "Error submitting verification");
         await refreshUser();
         return data;
     };
@@ -193,18 +177,13 @@ export function UserProvider({ children }: { children: ReactNode }) {
             `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/profile/kyc`,
             {
                 method: "POST",
-                headers: {
-                    ...headers,
-                },
+                headers: { ...headers },
                 body: formData,
             }
         );
 
         const data = await response.json();
-        if (!response.ok) {
-            throw new Error(data.error || data.message || "Error submitting KYC");
-        }
-
+        if (!response.ok) throw new Error(data.error || data.message || "Error submitting KYC");
         await refreshUser();
         return data;
     };
@@ -227,10 +206,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
         );
 
         const data = await response.json();
-        if (!response.ok) {
-            throw new Error(data.error || data.message || "Error updating profile");
-        }
-
+        if (!response.ok) throw new Error(data.error || data.message || "Error updating profile");
         await refreshUser();
         return data;
     };
@@ -242,17 +218,12 @@ export function UserProvider({ children }: { children: ReactNode }) {
                 const token = urlParams.get('session_token');
 
                 if (token) {
-                    console.log("Found session_token in URL, setting session...");
-                    const { error } = await supabase.auth.setSession({
+                    await supabase.auth.setSession({
                         access_token: token,
-                        refresh_token: '' // Fallback doesn't usually have a refresh token
+                        refresh_token: ''
                     });
-
-                    if (!error) {
-                        // Clean URL without refreshing page
-                        const newUrl = window.location.pathname;
-                        window.history.replaceState({}, '', newUrl);
-                    }
+                    const newUrl = window.location.pathname;
+                    window.history.replaceState({}, '', newUrl);
                 }
             }
             await refreshUser();
@@ -260,7 +231,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
         handleAuthFallback();
 
-        // Subscribe to auth changes to refresh user
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             async (_event, session) => {
                 if (session) {
@@ -275,7 +245,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
         return () => {
             subscription.unsubscribe();
         };
-    }, [refreshUser, supabase]);
+    }, [refreshUser]);
 
     return (
         <UserContext.Provider
