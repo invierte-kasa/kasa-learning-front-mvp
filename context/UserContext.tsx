@@ -120,21 +120,20 @@ export function UserProvider({ children }: { children: ReactNode }) {
             }
 
             console.log("✅ refreshUser: Sesión encontrada para:", session.user.email);
-            const headers = { Authorization: `Bearer ${session.access_token}` };
 
-            console.log("🔄 refreshUser: Llamando a Edge Function /profile...");
-            const response = await fetch(
-                `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/profile`,
-                { headers }
-            );
+            console.log("🔄 refreshUser: Obteniendo datos de la tabla 'profiles'...");
+            const { data, error: profileError } = await supabase
+                .from("profiles")
+                .select("*")
+                .eq("user_id", session.user.id)
+                .single();
 
-            if (!response.ok) {
-                console.error("❌ refreshUser: Error en API profile:", response.status, response.statusText);
-                throw new Error(`Error fetching profile: ${response.statusText}`);
+            if (profileError) {
+                console.error("❌ refreshUser: Error al consultar tabla profiles:", profileError);
+                throw new Error(`Error fetching profile: ${profileError.message}`);
             }
 
-            const data = await response.json();
-            console.log("✅ refreshUser: Datos recibidos:", data);
+            console.log("✅ refreshUser: Datos del perfil recibidos:", data);
 
             const avatarUrl = await getProfileImage(session.user.id);
             if (avatarUrl) {
