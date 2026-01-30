@@ -236,13 +236,35 @@ export function UserProvider({ children }: { children: ReactNode }) {
     };
 
     useEffect(() => {
-        refreshUser();
+        const handleAuthFallback = async () => {
+            if (typeof window !== 'undefined') {
+                const urlParams = new URLSearchParams(window.location.search);
+                const token = urlParams.get('session_token');
+
+                if (token) {
+                    console.log("Found session_token in URL, setting session...");
+                    const { error } = await supabase.auth.setSession({
+                        access_token: token,
+                        refresh_token: '' // Fallback doesn't usually have a refresh token
+                    });
+
+                    if (!error) {
+                        // Clean URL without refreshing page
+                        const newUrl = window.location.pathname;
+                        window.history.replaceState({}, '', newUrl);
+                    }
+                }
+            }
+            await refreshUser();
+        };
+
+        handleAuthFallback();
 
         // Subscribe to auth changes to refresh user
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
-            (_event, session) => {
+            async (_event, session) => {
                 if (session) {
-                    refreshUser();
+                    await refreshUser();
                 } else {
                     setUser(null);
                     setLoading(false);

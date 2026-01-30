@@ -4,11 +4,6 @@ export const createClient = async () => {
   const { cookies } = await import("next/headers");
   const cookieStore = await cookies();
 
-  const host = cookieStore.get('host')?.value || ''; // Note: headers() is better for host
-  // Re-importing headers for host
-  const { headers } = await import("next/headers");
-  const hostName = (await headers()).get('host') || '';
-
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -24,14 +19,11 @@ export const createClient = async () => {
             });
           } catch {
             // The `set` method was called from a Server Component.
-            // This can be ignored if you have middleware refreshing
-            // user sessions.
           }
         },
       },
       cookieOptions: {
-        name: 'kasa_learn_auth',
-        domain: hostName.includes('inviertekasa.com') ? '.inviertekasa.com' : undefined,
+        domain: process.env.NEXT_PUBLIC_COOKIE_DOMAIN || undefined,
         path: '/',
         sameSite: 'lax',
         secure: true,

@@ -29,16 +29,31 @@ const lockedItems = [
   },
 ]
 
+import { useUser } from '@/context/UserContext'
+
 export default function DashboardPage() {
+  const { user, loading } = useUser()
+
+  if (loading) {
+    return (
+      <div className="flex flex-col min-h-screen lg:flex-row items-center justify-center bg-kasa-body text-white">
+        <div className="animate-pulse text-xl">Cargando tu progreso...</div>
+      </div>
+    )
+  }
+
+  const userName = user?.names_first || 'Estudiante'
+  const userAvatar = user?.avatar_url || undefined
+
   return (
     <div className="flex flex-col min-h-screen lg:flex-row">
       <MainNav />
 
       <main className="flex-1 p-6 pb-[calc(80px+1.5rem)] w-full lg:p-8 lg:pb-8 lg:max-w-[1200px] lg:mx-auto">
-        <Header userName="Alexandre" />
+        <Header userName={userName} userAvatar={userAvatar} />
 
         <WelcomeSection
-          userName="Alexandre"
+          userName={userName}
           weeklyProgress={mockStats.weeklyProgress}
         />
 

@@ -14,7 +14,7 @@ export const updateSession = async (request: NextRequest) => {
     // Ajusta esto a tu dominio real de producción
     const MAIN_APP_URL = process.env.NEXT_PUBLIC_MAIN_APP_URL || 'https://kasa-frontend-dev-git-dev-inviert-kasas-projects.vercel.app';
 
-    // 2. Cliente Supabase (SIN cookieOptions personalizadas)
+    // 2. Cliente Supabase
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -35,7 +35,12 @@ export const updateSession = async (request: NextRequest) => {
             );
           },
         },
-        // ELIMINADO: cookieOptions (Para que use el nombre por defecto 'sb-...' igual que el principal)
+        cookieOptions: {
+          domain: process.env.NEXT_PUBLIC_COOKIE_DOMAIN || undefined,
+          path: '/',
+          sameSite: 'lax',
+          secure: true,
+        },
       }
     );
 
@@ -47,11 +52,10 @@ export const updateSession = async (request: NextRequest) => {
     console.log("Usuario encontrado:", !!user);
 
     // 4. Protección de Rutas
-    // NOTA: Si pusiste basePath: '/protected/learn' en next.config.js, 
-    // todas las rutas empezarán con eso. Ajusta esta lógica según tus rutas reales.
+    const hasSessionToken = request.nextUrl.searchParams.has('session_token');
 
     // Si NO hay usuario y NO es una ruta pública (imágenes, etc.)
-    if (error || !user) {
+    if ((error || !user) && !hasSessionToken) {
       // Excluimos archivos estáticos y favicon para no bloquear recursos
       if (!request.nextUrl.pathname.startsWith('/_next') &&
         !request.nextUrl.pathname.includes('favicon.ico')) {
@@ -61,7 +65,7 @@ export const updateSession = async (request: NextRequest) => {
         // Redirigir al Login del Proyecto Principal
         const loginUrl = new URL('/sign-in', MAIN_APP_URL);
         // Opcional: Agregar redirect para volver aquí después
-        // loginUrl.searchParams.set('redirect', '/protected/learn' + request.nextUrl.pathname); 
+        // loginUrl.searchParams.set('redirect', request.url); 
 
         return NextResponse.redirect(loginUrl);
       }

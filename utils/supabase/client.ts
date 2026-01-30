@@ -6,10 +6,7 @@ export const createClient = () =>
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookieOptions: {
-        name: 'kasa_learn_auth',
-        domain: typeof window !== 'undefined' && window.location.hostname.includes('inviertekasa.com')
-          ? '.inviertekasa.com'
-          : undefined,
+        domain: process.env.NEXT_PUBLIC_COOKIE_DOMAIN || undefined,
         path: '/',
         sameSite: 'lax',
         secure: true,
