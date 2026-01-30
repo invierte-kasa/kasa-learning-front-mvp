@@ -16,7 +16,6 @@ const mockStats: UserStats = {
 
 const lockedItems = [
   {
-
     title: 'Analisis de Mercado Local',
     subtitle: 'Bloqueado - Nivel 3 requerido',
     icon: 'chart' as const,
