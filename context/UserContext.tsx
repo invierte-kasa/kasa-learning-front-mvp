@@ -10,7 +10,6 @@ import {
 } from "react";
 import { createClient } from "@/utils/supabase/client";
 
-// Tipos basados en la documentación del endpoint
 export type VerificationStatus =
     | "verified_main_data"
     | "rejected_main_data"
@@ -30,19 +29,6 @@ export interface UserProfile {
     avatar_url?: string | null;
     names_first?: string;
     names_last?: string;
-    document_type?: string;
-    document_number?: string;
-    phone?: string;
-    gender?: string;
-    nationality?: string;
-    address?: string;
-    country?: string;
-    province?: string;
-    district?: string;
-    birthdate?: string;
-    cci?: string;
-    account_number?: string;
-    banco?: string;
     [key: string]: any;
 }
 
@@ -74,137 +60,95 @@ export function UserProvider({ children }: { children: ReactNode }) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    const getAuthHeader = async () => {
-        const { data: { session } } = await supabase.auth.getSession();
-        return session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : null;
-    };
-
     const getProfileImage = useCallback(async (userId: string) => {
         try {
             const { data: { session } } = await supabase.auth.getSession();
-            const token = session?.access_token;
-            if (!token) return null;
+            if (!session?.access_token) return null;
 
             const response = await fetch(
                 `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/get-profile-image?userId=${userId}`,
-                { headers: { Authorization: `Bearer ${token}` } }
+                { headers: { Authorization: `Bearer ${session.access_token}` } }
             );
-
             if (!response.ok) return null;
             const data = await response.json();
             return data.avatar_url;
         } catch (err) {
-            console.error("Error in getProfileImage:", err);
             return null;
         }
     }, []);
 
-    const refreshUser = useCallback(async () => {
-        console.log("🔄 refreshUser: Iniciando...");
+    const fetchProfile = useCallback(async (session: any) => {
+        if (!session) {
+            setUser(null);
+            setLoading(false);
+            return;
+        }
+
         try {
-            setLoading(true);
             setError(null);
+            console.log("🔄 UserProvider: Obteniendo perfil...");
 
-            console.log("🔄 refreshUser: Obteniendo sesión de Supabase...");
-            const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-
-            if (sessionError) {
-                console.error("❌ refreshUser: Error en getSession:", sessionError);
-            }
-
-            if (!session) {
-                console.log("ℹ️ refreshUser: No hay sesión activa.");
-                setUser(null);
-                setLoading(false);
-                return;
-            }
-
-            console.log("✅ refreshUser: Sesión encontrada para:", session.user.email);
-
-            console.log("🔄 refreshUser: Obteniendo datos de la tabla 'profiles'...");
             const { data, error: profileError } = await supabase
                 .from("profiles")
                 .select("*")
                 .eq("user_id", session.user.id)
                 .single();
 
-            if (profileError) {
-                console.error("❌ refreshUser: Error al consultar tabla profiles:", profileError);
-                throw new Error(`Error fetching profile: ${profileError.message}`);
-            }
-
-            console.log("✅ refreshUser: Datos del perfil recibidos:", data);
+            if (profileError) throw profileError;
 
             const avatarUrl = await getProfileImage(session.user.id);
-            if (avatarUrl) {
-                data.avatar_url = avatarUrl;
-            }
+            if (avatarUrl) data.avatar_url = avatarUrl;
 
             setUser(data);
+            console.log("✅ UserProvider: Perfil cargado.");
         } catch (err: any) {
-            console.error("❌ refreshUser: Excepción capturada:", err);
-            setError(err.message || "Error cargando perfil");
-            setUser(null);
+            console.error("❌ UserProvider: Error cargando perfil:", err);
+            setError(err.message);
         } finally {
-            console.log("🏁 refreshUser: Finalizado, setLoading(false)");
             setLoading(false);
         }
     }, [getProfileImage]);
 
-    const submitVerification = async (formData: FormData) => {
-        const headers = await getAuthHeader();
-        if (!headers) throw new Error("No authenticated session");
-        const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/profile/verification`, { method: "POST", headers, body: formData });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || data.message || "Error submitting verification");
-        await refreshUser();
-        return data;
-    };
-
-    const submitKyc = async (formData: FormData) => {
-        const headers = await getAuthHeader();
-        if (!headers) throw new Error("No authenticated session");
-        const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/profile/kyc`, { method: "POST", headers, body: formData });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || data.message || "Error submitting KYC");
-        await refreshUser();
-        return data;
-    };
-
-    const updateProfile = async (updateData: Record<string, any>) => {
-        const headers = await getAuthHeader();
-        if (!headers) throw new Error("No authenticated session");
-        const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/profile`, { method: "PATCH", headers: { ...headers, "Content-Type": "application/json" }, body: JSON.stringify(updateData) });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || data.message || "Error updating profile");
-        await refreshUser();
-        return data;
-    };
+    const refreshUser = useCallback(async () => {
+        setLoading(true);
+        const { data: { session } } = await supabase.auth.getSession();
+        await fetchProfile(session);
+    }, [fetchProfile]);
 
     useEffect(() => {
-        const handleAuthFallback = async () => {
-            console.log("🚀 handleAuthFallback: Iniciando...");
-            if (typeof window !== 'undefined') {
+        const initAuth = async () => {
+            console.log("🚀 UserProvider: Inicializando auth...");
+            try {
+                // 1. Manejar el fallback de URL
                 const urlParams = new URLSearchParams(window.location.search);
                 const token = urlParams.get('session_token');
 
                 if (token) {
-                    console.log("🎁 handleAuthFallback: session_token detectado en URL.");
+                    console.log("🎁 UserProvider: Usando token de URL...");
                     await supabase.auth.setSession({ access_token: token, refresh_token: '' });
-                    const newUrl = window.location.pathname;
-                    window.history.replaceState({}, '', newUrl);
+                    window.history.replaceState({}, '', window.location.pathname);
                 }
+
+                // 2. Obtener sesión actual (esto disparará el listener si cambia)
+                const { data: { session } } = await supabase.auth.getSession();
+                if (session) {
+                    await fetchProfile(session);
+                } else {
+                    setLoading(false);
+                }
+            } catch (err) {
+                console.error("❌ UserProvider: Error en inicialización:", err);
+                setLoading(false);
             }
-            await refreshUser();
         };
 
-        handleAuthFallback();
+        initAuth();
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             async (event, session) => {
-                console.log("🔔 AuthStateChange detectado:", event);
+                console.log("🔔 UserProvider: Evento Auth:", event);
                 if (session) {
-                    await refreshUser();
+                    await fetchProfile(session);
                 } else {
                     setUser(null);
                     setLoading(false);
@@ -213,7 +157,32 @@ export function UserProvider({ children }: { children: ReactNode }) {
         );
 
         return () => subscription.unsubscribe();
-    }, [refreshUser]);
+    }, [fetchProfile]);
+
+    // Métodos de utilidad (KYC, Perfil, etc)
+    const getAuthHeader = async () => ({ Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}` });
+
+    const submitVerification = async (formData: FormData) => {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/profile/verification`, { method: "POST", headers: await getAuthHeader(), body: formData });
+        if (!response.ok) throw new Error("Error en verificación");
+        return await refreshUser();
+    };
+
+    const submitKyc = async (formData: FormData) => {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/profile/kyc`, { method: "POST", headers: await getAuthHeader(), body: formData });
+        if (!response.ok) throw new Error("Error en KYC");
+        return await refreshUser();
+    };
+
+    const updateProfile = async (updateData: Record<string, any>) => {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/profile`, {
+            method: "PATCH",
+            headers: { ...(await getAuthHeader()), "Content-Type": "application/json" },
+            body: JSON.stringify(updateData)
+        });
+        if (!response.ok) throw new Error("Error actualizando perfil");
+        return await refreshUser();
+    };
 
     return (
         <UserContext.Provider value={{ user, loading, error, refreshUser, submitVerification, submitKyc, updateProfile, getProfileImage }}>
