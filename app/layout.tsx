@@ -1,11 +1,17 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Inter, Montserrat } from 'next/font/google'
 import '@/styles/globals.css'
 
 const inter = Inter({
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-inter',
+})
+
+const montserrat = Montserrat({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800'],
+  variable: '--font-montserrat',
 })
 
 export const metadata: Metadata = {
@@ -21,8 +27,8 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="es" className={`dark ${inter.variable}`}>
-      <body className="bg-kasa-body text-white min-h-screen font-sans antialiased">
+    <html lang="es" className={`dark ${inter.variable} ${montserrat.variable}`}>
+      <body className=" text-white min-h-screen font-sans antialiased relative">
         <UserProvider>
           {children}
         </UserProvider>

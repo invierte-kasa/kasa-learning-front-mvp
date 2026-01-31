@@ -15,10 +15,12 @@ const navItems: { href: string; label: string; icon: React.ReactNode; id: NavIte
   { href: '/profile', label: 'Perfil', icon: <User className="w-6 h-6" />, id: 'profile' },
 ]
 
-interface MainNavProps extends HTMLAttributes<HTMLElement> { }
+interface MainNavProps extends HTMLAttributes<HTMLElement> {
+  onNavItemClick?: (e: React.MouseEvent<HTMLAnchorElement>, href: string) => void
+}
 
 const MainNav = forwardRef<HTMLElement, MainNavProps>(
-  ({ className, ...props }, ref) => {
+  ({ className, onNavItemClick, ...props }, ref) => {
     const pathname = usePathname()
 
     const isActive = (href: string) => {
@@ -51,6 +53,11 @@ const MainNav = forwardRef<HTMLElement, MainNavProps>(
           <Link
             key={item.id}
             href={item.href}
+            onClick={(e) => {
+              if (onNavItemClick) {
+                onNavItemClick(e, item.href)
+              }
+            }}
             className={cn(
               // Base styles
               'flex flex-col items-center gap-1 text-xs font-bold cursor-pointer p-2 rounded-2xl transition-all',

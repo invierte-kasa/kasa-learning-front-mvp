@@ -45,6 +45,19 @@ module.exports = {
       fontFamily: {
         sans: ['var(--font-inter)', 'Inter', 'system-ui', 'sans-serif'],
       },
+      keyframes: {
+        spinFast: {
+          from: { transform: 'rotate(0deg)' },
+          to: { transform: 'rotate(360deg)' },
+        },
+        pulseSimple: {
+          '75%, 100%': { transform: 'scale(3)', opacity: '0' },
+        },
+      },
+      animation: {
+        'spin-fast': 'spinFast 1s linear infinite',
+        'pulse-simple': 'pulseSimple 1.5s infinite',
+      },
     },
   },
   plugins: [],

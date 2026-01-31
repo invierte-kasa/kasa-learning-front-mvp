@@ -35,3 +35,5 @@ next-env.d.ts
 
 # Module Federation
 /remoteEntry.js
+
+certificates

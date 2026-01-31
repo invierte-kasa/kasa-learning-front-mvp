@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { MainNav } from '@/components/layout/MainNav'
+import { motion } from 'motion/react'
 import { ModuleCard } from '@/components/dashboard/ModuleCard'
 import { ProgressBar } from '@/components/ui/ProgressBar'
 import { Module } from '@/types'
@@ -63,8 +64,20 @@ export default function SectionsPage() {
       <MainNav />
 
       <main className="flex-1 p-6 pb-[calc(80px+1.5rem)] w-full lg:p-8 lg:pb-8 lg:max-w-[800px] lg:mx-auto">
-        {/* Header */}
-        <header className="flex items-center justify-between mb-8 py-2">
+        {/* Header con animación de entrada (Salto desde arriba) */}
+        <motion.header
+          initial={{ y: '-100%', opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{
+            type: "spring",
+            stiffness: 180,
+            damping: 13,
+            mass: 1,
+            bounce: 0.7,
+            delay: 0.2
+          }}
+          className="flex items-center justify-between mb-8 py-2"
+        >
           <Link
             href="/"
             className="w-10 h-10 bg-kasa-card border border-kasa-border rounded-full flex items-center justify-center text-white no-underline"
@@ -81,7 +94,7 @@ export default function SectionsPage() {
             <span className="text-kasa-primary font-extrabold text-base">{sectionData.totalXp} XP</span>
             <span className="block text-[0.65rem] uppercase text-text-muted font-bold">Total Reward</span>
           </div>
-        </header>
+        </motion.header>
 
         {/* Section info */}
         <section className="mt-4">

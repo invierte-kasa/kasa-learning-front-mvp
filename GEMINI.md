@@ -64,6 +64,43 @@ To support the "Personalized Streak House" feature [Phase 2], the frontend utili
 ## Fetch 
 Dont use fetch, use the `./app/api/` directory to fetch data from the backend.
 
+## Animations and CSS - Duolingo Style
+
+Implement smooth, engaging animations and transitions inspired by Duolingo:
+
+### Animation Principles:
+- Use CSS animations and transitions for all interactive elements
+- Aim for 300-500ms duration for most interactions (snappy but not jarring)
+- Implement easing functions: ease-out for entrance, ease-in-out for loops
+- Add micro-interactions on hover, click, and state changes
+
+### Specific Animation Types:
+- **Entrance animations**: Fade-in + subtle scale (0.95 → 1) with 400ms duration
+- **Button interactions**: Scale on hover (1 → 1.05), press effect on click (1 → 0.98)
+- **Progress indicators**: Smooth width transitions, animated checkmarks
+- **Error states**: Shake animation (translate X: -2px, 2px, -2px pattern) with 300ms
+- **Success states**: Bounce animation with confetti-like particles (optional)
+- **Hover effects**: Slight lift effect using transform: translateY(-2px) + shadow
+- **Transitions**: Use transform and opacity for performance (avoid layout shifts)
+
+### CSS Best Practices:
+- Prefer transform and opacity over left/top/width changes
+- Use will-change: transform for animated elements
+- Set backface-visibility: hidden to prevent flickering
+- Implement @media (prefers-reduced-motion) for accessibility
+
+### Implementation:
+- Use Tailwind CSS with custom animation config when possible
+- Create reusable animation classes for consistency
+- Keep animations under 60fps (use DevTools to verify)
+- Test on mobile devices for smooth performance
+
+### Duolingo-Specific Details:
+- Smooth floating animations for achievement popups
+- Quick bounce on level completion
+- Smooth fill animations for progress bars
+- Gentle pulse effects for CTAs
+- Smooth color transitions on state changes
 ## Subdomain
 The application is hosted on a subdomain: `https://kasa-learning.vercel.app/`
 
