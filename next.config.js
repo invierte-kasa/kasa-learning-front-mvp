@@ -3,7 +3,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
-    allowedDevOrigins: ["learn.local.inviertekasa.shop:3001", "learn.local.inviertekasa.shop"]
   },
   images: {
     remotePatterns: [

@@ -110,7 +110,7 @@ export function SyncScreen({ user, isExiting }: SyncScreenProps) {
         </div>
 
         {/* Sección que se expande del centro hacia afuera */}
-        <section className={`${styles['expandable-section']} rounded-tl-sm  ${isExpanded ? styles['is-expanded'] : ''}`}>
+        <section className={`${styles['expandable-section']} ${isExpanded ? styles['is-expanded'] : ''}`}>
           <AnimatePresence initial={false}>
             {isVisible && (
               <motion.div
@@ -128,14 +128,14 @@ export function SyncScreen({ user, isExiting }: SyncScreenProps) {
                 key="sync-content"
                 className="flex-1 flex flex-col h-full"
               >
-                <div className={`${styles.breadcrumbs} rounded-tl-sm  text-xs sm:text-sm flex justify-center text-white mt-10 px-4 py-2 sm:py-3`}>
+                <div className={`${styles.breadcrumbs} text-xs sm:text-sm flex justify-center text-white mt-10 px-4 py-2 sm:py-3`}>
                   <ul>
                     <li className="font-bold"><a href="/">Inicio</a></li>
                     <li className="opacity-60">Kasa Learn</li>
                   </ul>
                 </div>
 
-                <div className=" rounded-tl-sm  flex-1 flex flex-col items-center justify-center gap-6">
+                <div className="flex-1 flex flex-col items-center justify-center gap-6">
                   <div className="relative">
                     <div className={`w-16 h-16 border-4 border-[#00cc65]/20 border-t-[#00cc65] rounded-full ${styles['animate-spin']}`}></div>
                     <div className="absolute inset-0 flex items-center justify-center">
