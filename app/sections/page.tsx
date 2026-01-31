@@ -1,5 +1,6 @@
 'use client'
 
+import { Suspense } from 'react'
 import Link from 'next/link'
 import { MainNav } from '@/components/layout/MainNav'
 import { motion } from 'motion/react'
@@ -33,7 +34,7 @@ interface ModuleData {
   module_number: number
 }
 
-export default function SectionsPage() {
+function SectionsContent() {
   const [isExitingPage, setIsExitingPage] = useState(false)
   const [sectionData, setSectionData] = useState<SectionData | null>(null)
   const [modules, setModules] = useState<Module[]>([])
@@ -42,7 +43,7 @@ export default function SectionsPage() {
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
   const searchParams = useSearchParams()
-  const sectionId = searchParams.get('id') || '1' // Default to first section  
+  const sectionId = searchParams.get('id') || '1' // Default to first section
   const supabase = createClient()
 
   useEffect(() => {
@@ -272,5 +273,13 @@ export default function SectionsPage() {
         </motion.section>
       </main>
     </div>
+  )
+}
+
+export default function SectionsPage() {
+  return (
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center"><div className="text-white">Cargando...</div></div>}>
+      <SectionsContent />
+    </Suspense>
   )
 }
