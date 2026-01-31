@@ -5,6 +5,8 @@ import { MainNav } from '@/components/layout/MainNav'
 import { Podium, LeaderboardCard, UserStatusBar } from '@/components/ranking'
 import { RankingUser, RankingTab } from '@/types'
 import { cn } from '@/lib/utils'
+import { motion } from 'motion/react'
+import { useRouter } from 'next/navigation'
 
 // Icons
 const XPIcon = () => (
@@ -49,6 +51,8 @@ const currentUser = {
 
 export default function RankingPage() {
   const [tab, setTab] = useState<RankingTab>('xp')
+  const [isExitingPage, setIsExitingPage] = useState(false)
+  const router = useRouter()
 
   const rankings = tab === 'xp' ? xpRankings : streakRankings
   const podiumUsers = rankings.slice(0, 3)
@@ -58,73 +62,156 @@ export default function RankingPage() {
     ? { progress: 80, nextRankGap: 250, nextRankName: 'Michael B.' }
     : { progress: 60, nextRankGap: 3, nextRankName: '5' }
 
+  const handleNavItemClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    e.preventDefault()
+    if (isExitingPage) return
+
+    setIsExitingPage(true)
+
+    // Secuencia de salida: última animación (Podium) termina en 1.4s (delay 1s + 0.4s duration)
+    // Esperamos 0.3s adicionales = 1.7s total
+    setTimeout(() => {
+      router.push(href)
+    }, 1700)
+  }
+
   return (
     <div className="flex flex-col min-h-screen lg:flex-row">
-      <MainNav />
+      <MainNav onNavItemClick={handleNavItemClick} />
 
       <main className="flex-1 p-6 pb-[calc(80px+140px)] w-full lg:p-12 lg:pb-12 lg:max-w-[900px] lg:mx-auto">
-        {/* Header */}
-        <header className="mb-8">
-          <h1 className="text-3xl font-extrabold leading-tight mb-2 text-white">League Rankings</h1>
-          <p className="text-text-muted">Top Kasa Investors this week</p>
-        </header>
+        {/* Header + Filter Tabs - Tercero en entrar (delay 1s) desde arriba, Primero en salir (delay 0s) hacia arriba */}
+        <motion.div
+          initial={{ y: '-100%', opacity: 0 }}
+          animate={isExitingPage
+            ? { y: '-100%', opacity: 0 }
+            : { y: 0, opacity: 1 }
+          }
+          transition={isExitingPage
+            ? { duration: 0.4, ease: [0.4, 0, 1, 1], delay: 0 }
+            : {
+              type: "spring",
+              stiffness: 180,
+              damping: 13,
+              mass: 1,
+              bounce: 0.7,
+              delay: 1
+            }
+          }
+        >
+          <header className="mb-8">
+            <h1 className="text-3xl font-extrabold leading-tight mb-2 text-white">League Rankings</h1>
+            <p className="text-text-muted">Top Kasa Investors this week</p>
+          </header>
 
-        {/* Filter tabs */}
-        <div className="flex bg-kasa-card border border-kasa-border rounded-xl p-1 mb-8">
-          <button
-            onClick={() => setTab('xp')}
-            className={cn(
-              'flex-1 py-2.5 border-none rounded-lg font-bold text-sm cursor-pointer flex items-center justify-center gap-2 transition-all',
-              tab === 'xp'
-                ? 'bg-kasa-primary text-white shadow-[0_2px_8px_rgba(16,185,129,0.3)]'
-                : 'bg-transparent text-text-muted'
-            )}
-          >
-            <XPIcon />
-            By XP
-          </button>
-          <button
-            onClick={() => setTab('streak')}
-            className={cn(
-              'flex-1 py-2.5 border-none rounded-lg font-bold text-sm cursor-pointer flex items-center justify-center gap-2 transition-all',
-              tab === 'streak'
-                ? 'bg-kasa-primary text-white shadow-[0_2px_8px_rgba(16,185,129,0.3)]'
-                : 'bg-transparent text-text-muted'
-            )}
-          >
-            <StreakIcon />
-            By Streak
-          </button>
-        </div>
+          {/* Filter tabs */}
+          <div className="flex bg-kasa-card border border-kasa-border rounded-xl p-1 mb-8">
+            <button
+              onClick={() => setTab('xp')}
+              className={cn(
+                'flex-1 py-2.5 border-none rounded-lg font-bold text-sm cursor-pointer flex items-center justify-center gap-2 transition-all',
+                tab === 'xp'
+                  ? 'bg-kasa-primary text-white shadow-[0_2px_8px_rgba(16,185,129,0.3)]'
+                  : 'bg-transparent text-text-muted'
+              )}
+            >
+              <XPIcon />
+              By XP
+            </button>
+            <button
+              onClick={() => setTab('streak')}
+              className={cn(
+                'flex-1 py-2.5 border-none rounded-lg font-bold text-sm cursor-pointer flex items-center justify-center gap-2 transition-all',
+                tab === 'streak'
+                  ? 'bg-kasa-primary text-white shadow-[0_2px_8px_rgba(16,185,129,0.3)]'
+                  : 'bg-transparent text-text-muted'
+              )}
+            >
+              <StreakIcon />
+              By Streak
+            </button>
+          </div>
+        </motion.div>
 
-        {/* Podium */}
-        <Podium users={podiumUsers} tab={tab} />
+        {/* Podium - Primero en entrar (delay 0s) desde arriba, Tercero en salir (delay 1s) hacia arriba */}
+        <motion.div
+          initial={{ y: '-100%', opacity: 0 }}
+          animate={isExitingPage
+            ? { y: '-100%', opacity: 0 }
+            : { y: 0, opacity: 1 }
+          }
+          transition={isExitingPage
+            ? { duration: 0.4, ease: [0.4, 0, 1, 1], delay: 1 }
+            : {
+              type: "spring",
+              stiffness: 180,
+              damping: 13,
+              mass: 1,
+              bounce: 0.7,
+              delay: 0
+            }
+          }
+        >
+          <Podium users={podiumUsers} tab={tab} />
+        </motion.div>
 
-        {/* Leaderboard list */}
-        <span className="block text-xs uppercase tracking-widest text-text-muted font-bold mb-6">
-          {tab === 'xp' ? 'Top 10 Rankings' : 'Consistency Leaders'}
-        </span>
+        {/* Leaderboard list - Segundo en entrar (delay 0.4s) desde arriba, Cuarto en salir (delay 1.4s) hacia arriba */}
+        <motion.div
+          initial={{ y: '-100%', opacity: 0 }}
+          animate={isExitingPage
+            ? { y: '-100%', opacity: 0 }
+            : { y: 0, opacity: 1 }
+          }
+          transition={isExitingPage
+            ? { duration: 0.4, ease: [0.4, 0, 1, 1], delay: 0.6 }
+            : {
+              type: "spring",
+              stiffness: 180,
+              damping: 13,
+              mass: 1,
+              bounce: 0.7,
+              delay: 0.4
+            }
+          }
+        >
+          <span className="block text-xs uppercase tracking-widest text-text-muted font-bold mb-6">
+            {tab === 'xp' ? 'Top 10 Rankings' : 'Consistency Leaders'}
+          </span>
 
-        <div className="flex flex-col gap-3">
-          {listUsers.map((user) => (
-            <LeaderboardCard
-              key={user.id}
-              user={user}
-              tab={tab}
-              isCurrentUser={user.name.includes('You') || user.name === 'Juan R.'}
-            />
-          ))}
-        </div>
+          <div className="flex flex-col gap-3">
+            {listUsers.map((user) => (
+              <LeaderboardCard
+                key={user.id}
+                user={user}
+                tab={tab}
+                isCurrentUser={user.name.includes('You') || user.name === 'Juan R.'}
+              />
+            ))}
+          </div>
+        </motion.div>
 
-        {/* User status bar */}
-        <UserStatusBar
-          name={currentUser.name}
-          avatar={currentUser.avatar}
-          tab={tab}
-          xp={currentUser.xp}
-          streak={currentUser.streak}
-          {...statusProps}
-        />
+        {/* User Status Bar - Fade in/out (delay 0.3s entrada, delay 0.5s salida) */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={isExitingPage
+            ? { opacity: 0 }
+            : { opacity: 1 }
+          }
+          transition={{
+            duration: 0.4,
+            ease: "easeInOut",
+            delay: isExitingPage ? 0.7 : 0.3
+          }}
+        >
+          <UserStatusBar
+            name={currentUser.name}
+            avatar={currentUser.avatar}
+            tab={tab}
+            xp={currentUser.xp}
+            streak={currentUser.streak}
+            {...statusProps}
+          />
+        </motion.div>
       </main>
     </div>
   )

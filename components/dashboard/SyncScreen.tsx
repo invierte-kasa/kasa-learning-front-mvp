@@ -6,6 +6,7 @@ import { createClient } from '@/utils/supabase/client'
 import { useRouter } from 'next/navigation'
 import { AnimatePresence, motion } from 'motion/react'
 import { useState, useEffect } from 'react'
+import styles from './SyncScreen.module.css'
 
 interface SyncScreenProps {
   user: UserProfile | null
@@ -13,7 +14,7 @@ interface SyncScreenProps {
 }
 
 export function SyncScreen({ user, isExiting }: SyncScreenProps) {
-  const userName = user?.names_first || 'Estudiante'
+  const userName = user?.names_first || " "
   const userLastName = user?.names_last || ''
   const userInitials = userName.charAt(0).toUpperCase() + (userLastName ? userLastName.charAt(0).toUpperCase() : '')
   const router = useRouter()
@@ -61,81 +62,8 @@ export function SyncScreen({ user, isExiting }: SyncScreenProps) {
       </Head>
 
       <div className="fixed inset-0 z-[100] bg-[#ECEFE1] overflow-hidden" style={{ fontFamily: '__Montserrat_ca911e' }}>
-        <style jsx>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-
-        @keyframes ping {
-          75%, 100% { transform: scale(2); opacity: 0; }
-        }
-
-        .animate-spin { animation: spin 1s linear infinite; }
-        .animate-ping { animation: ping 1s cubic-bezier(0, 0, 0.2, 1) infinite; }
-
-        .breadcrumbs ul { display: flex; align-items: center; gap: 0.5rem; }
-        .breadcrumbs ul li { display: flex; align-items: center; }
-        .breadcrumbs ul li + li:before { content: ">"; margin-right: 0.5rem; opacity: 0.6; }
-        .breadcrumbs ul li a { text-decoration: none; color: inherit; }
-        .breadcrumbs ul li a:hover { text-decoration: underline; }
-
-        /* --- ANIMACIÓN DE EXPANSIÓN PREMIUM --- */
-        .expandable-section {
-          position: fixed !important;
-          bottom: 0;
-          /* Alineación exacta con el final del header (pt-12 + mt-7 + h-24) */
-          top: 10.75rem; 
-          left: 50%;
-          transform: translateX(-50%);
-          
-          /* Ancho inicial igual al header con sus paddings */
-          width: calc(100% - 2rem); /* px-4 */
-          max-width: calc(1300px - 2rem);
-          
-          background: #101a28;
-          border-top-left-radius: 30px;
-          z-index: 1;
-          
-          transition: 
-            width 1.2s cubic-bezier(0.4, 0, 0.2, 1),
-            top 1.2s cubic-bezier(0.4, 0, 0.2, 1),
-            max-width 1.2s cubic-bezier(0.4, 0, 0.2, 1),
-            border-radius 0.6s ease;
-          overflow: hidden;
-        }
-
-        @media (min-width: 640px) {
-          .expandable-section {
-            width: calc(100% - 3rem); /* px-6 */
-            max-width: calc(1300px - 3rem);
-          }
-        }
-
-        @media (min-width: 1024px) {
-          .expandable-section {
-            width: calc(100% - 4rem); /* px-8 */
-            max-width: calc(1300px - 4rem);
-          }
-        }
-
-        .is-expanded {
-          top: 0 !important;
-          width: 102vw !important;
-          max-width: 102vw !important;
-        }
-
-        .header-container {
-          position: relative;
-          z-index: 10;
-          max-width: 1300px;
-          margin: 0 auto;
-          width: 100%;
-        }
-        `}</style>
-
         {/* Capa de Navegación (Siempre sobre la expansión) */}
-        <div className="header-container px-4 sm:px-6 lg:px-8 pt-12">
+        <div className={`${styles['header-container']} px-4 sm:px-6 lg:px-8 pt-12`}>
           <motion.header
             className="relative h-16 sm:h-20 lg:h-24 mt-2 sm:mt-4 lg:mt-7"
             animate={{ y: headerY }}
@@ -179,33 +107,39 @@ export function SyncScreen({ user, isExiting }: SyncScreenProps) {
               </button>
             </nav>
           </motion.header>
-        </div >
+        </div>
 
         {/* Sección que se expande del centro hacia afuera */}
-        < section className={`expandable-section ${isExpanded ? 'is-expanded' : ''}`
-        }>
+        <section className={`${styles['expandable-section']} rounded-tl-sm  ${isExpanded ? styles['is-expanded'] : ''}`}>
           <AnimatePresence initial={false}>
             {isVisible && (
               <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ duration: 0.5, ease: "easeInOut" }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{
+                  opacity: 0,
+                  y: -50,
+                  transition: {
+                    duration: 0.3,
+                    ease: [0.4, 0, 1, 1] // ease-in rápido
+                  }
+                }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
                 key="sync-content"
                 className="flex-1 flex flex-col h-full"
               >
-                <div className="breadcrumbs text-xs sm:text-sm flex justify-center text-white mt-10 px-4 py-2 sm:py-3">
+                <div className={`${styles.breadcrumbs} rounded-tl-sm  text-xs sm:text-sm flex justify-center text-white mt-10 px-4 py-2 sm:py-3`}>
                   <ul>
                     <li className="font-bold"><a href="/">Inicio</a></li>
                     <li className="opacity-60">Kasa Learn</li>
                   </ul>
                 </div>
 
-                <div className="flex-1 flex flex-col items-center justify-center gap-6">
+                <div className=" rounded-tl-sm  flex-1 flex flex-col items-center justify-center gap-6">
                   <div className="relative">
-                    <div className="w-16 h-16 border-4 border-[#00cc65]/20 border-t-[#00cc65] rounded-full animate-spin"></div>
+                    <div className={`w-16 h-16 border-4 border-[#00cc65]/20 border-t-[#00cc65] rounded-full ${styles['animate-spin']}`}></div>
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-2 h-2 bg-[#00cc65] rounded-full animate-ping"></div>
+                      <div className={`w-2 h-2 bg-[#00cc65] rounded-full ${styles['animate-ping']}`}></div>
                     </div>
                   </div>
                   <div className="text-center space-y-2">
