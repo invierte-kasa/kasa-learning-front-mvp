@@ -57,8 +57,8 @@
 .expandable-section {
     position: fixed !important;
     bottom: 0;
-    top: 5.5rem;
-    /* Mobile: header más pequeño */
+    top: 7.5rem;
+    /* Mobile: header + padding + margin */
     left: 50%;
     transform: translateX(-50%);
 
@@ -105,7 +105,7 @@
     top: 0 !important;
     width: 102vw !important;
     max-width: 102vw !important;
-
+    border-radius: 0 !important;
 }
 
 /* Header container */
