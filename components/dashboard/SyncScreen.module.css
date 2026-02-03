@@ -74,7 +74,7 @@
         width 1.2s cubic-bezier(0.4, 0, 0.2, 1),
         top 1.2s cubic-bezier(0.4, 0, 0.2, 1),
         max-width 1.2s cubic-bezier(0.4, 0, 0.2, 1),
-        border-radius 0.6s ease;
+        border-radius 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
     overflow: hidden;
 }
 
@@ -84,6 +84,7 @@
         width: calc(100% - 3rem);
         /* px-6 */
         max-width: calc(1300px - 3rem);
+
     }
 }
 
@@ -95,6 +96,7 @@
         width: calc(100% - 4rem);
         /* px-8 */
         max-width: calc(1300px - 4rem);
+
     }
 }
 
@@ -103,6 +105,7 @@
     top: 0 !important;
     width: 102vw !important;
     max-width: 102vw !important;
+
 }
 
 /* Header container */
