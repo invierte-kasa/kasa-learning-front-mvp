@@ -67,8 +67,8 @@ export default function DashboardPage() {
 
   return (
     <>
-      <SyncScreen user={user} isExiting={isExitingSync} />
-      {/* <div style={{ display: isSyncing ? 'block' : 'none' }}>
+
+      <div style={{ display: isSyncing ? 'block' : 'none' }}>
         <SyncScreen user={user} isExiting={isExitingSync} />
       </div>
 
@@ -77,7 +77,7 @@ export default function DashboardPage() {
         userName={userName}
         mockStats={mockStats}
         lockedItems={lockedItems}
-      /> */}
+      />
     </>
   )
 }
