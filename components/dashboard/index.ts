@@ -13,5 +13,7 @@ export type { LockedItemProps, LockedSectionProps } from './LockedItem'
 export { ModuleCard } from './ModuleCard'
 export type { ModuleCardProps } from './ModuleCard'
 
+export { SectionCard } from './SectionCard'
+
 export { SyncScreen } from './SyncScreen'
 export { DashboardContent } from './DashboardContent'

@@ -120,8 +120,20 @@ The application leverages a relational database hosted on Supabase (PostgreSQL).
 #### 2. Educational Content Hierarchy
 The content follows a strict parent-child relationship:
 * **`section`**: Top-level topics (e.g., "Fundamentos").
+    * **Columns**: `id` (uuid, PK), `title` (text), `topic` (text), `created_at` (timestamp), `updated_at` (timestamp).
+    * **RLS Policies**:
+        * `Allow admins to delete sections` (DELETE, authenticated)
+        * `Allow admins to insert sections` (INSERT, authenticated)
+        * `Allow admins to update sections` (UPDATE, authenticated)
+        * `Allow authenticated users to select sections` (SELECT, authenticated)
     * *Relation:* One-to-Many with Modules.
 * **`module`**: Specific learning units. Contains metadata like `estimated_time` and `xp` reward.
+    * **Columns**: `id` (uuid, PK), `section_id` (uuid, FK), `title` (text), `xp` (int4), `estimated_time_in_minutes` (int4), `module_number` (int4), `created_at` (timestamp), `updated_at` (timestamp).
+    * **RLS Policies**:
+        * `Allow admins to delete modules` (DELETE, authenticated)
+        * `Allow admins to insert modules` (INSERT, authenticated)
+        * `Allow admins to update modules` (UPDATE, authenticated)
+        * `Allow authenticated users to select modules` (SELECT, authenticated)
     * *Relation:* One-to-Many with Lessons/Quizzes.
 * **`lesson`**: Individual content pieces associated with a module.
 * **`quiz`**: Assessment units linked to modules.
@@ -131,7 +143,8 @@ The content follows a strict parent-child relationship:
 The quiz system is polymorphic, supporting different question types linked via the `question` table:
 * **`question`**: Base table for all query items.
 * **Specific Types:**
-    * `pairs`: Matching logic (left_words / right_words).
+    * **`pairs`**: Matching logic (left_words / right_words).
+        * *Note:* This table exists but RLS policies are not yet configured.
     * `input_question`: Text input validation.
     * `cloze`: Fill-in-the-blank style interaction.
 
