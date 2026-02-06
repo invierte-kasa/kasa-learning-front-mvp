@@ -97,7 +97,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
                 supabase
                     .schema('kasa_learn_journey')
                     .from('user_module_progress')
-                    .select('*', { count: 'exact', head: true })
+                    .select('id', { count: 'exact' })
                     .eq('user_id', userId)
                     .eq('status', 'completed'),
 
@@ -105,7 +105,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
                 supabase
                     .schema('kasa_learn_journey')
                     .from('module')
-                    .select('*', { count: 'exact', head: true })
+                    .select('id', { count: 'exact' })
             ]);
 
             if (publicRes.error) console.warn("⚠️ [UserContext] Perfil público no encontrado.");
