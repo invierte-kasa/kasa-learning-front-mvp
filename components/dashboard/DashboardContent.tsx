@@ -12,11 +12,11 @@ import { motion } from 'motion/react'
 interface DashboardContentProps {
     showDashboard: boolean
     userName: string
-    mockStats: UserStats
+    userStats: UserStats
     lockedItems: any[]
 }
 
-export function DashboardContent({ showDashboard, userName, mockStats, lockedItems }: DashboardContentProps) {
+export function DashboardContent({ showDashboard, userName, userStats, lockedItems }: DashboardContentProps) {
     const [navVisible, setNavVisible] = useState(false)
     const [contentVisible, setContentVisible] = useState(false)
     const [isMobile, setIsMobile] = useState(false)
@@ -142,7 +142,7 @@ export function DashboardContent({ showDashboard, userName, mockStats, lockedIte
                                 >
                                     <WelcomeSection
                                         userName={userName}
-                                        weeklyProgress={mockStats.weeklyProgress}
+                                        weeklyProgress={userStats.weeklyProgress}
                                     />
                                 </motion.div>
 
@@ -162,7 +162,7 @@ export function DashboardContent({ showDashboard, userName, mockStats, lockedIte
                                         delay: isExitingPage ? 0.6 : 0.2
                                     }}
                                 >
-                                    <StatsGrid stats={mockStats} />
+                                    <StatsGrid stats={userStats} />
                                 </motion.div>
                             </div>
 

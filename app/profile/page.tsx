@@ -2,6 +2,7 @@
 
 import { MainNav } from '@/components/layout/MainNav'
 import { ProfileHero, StatCard, XPCard, StreakCard, HousePreview } from '@/components/profile'
+import { useUser } from '@/context/UserContext'
 
 // Icons
 const BookIcon = () => (
@@ -20,7 +21,7 @@ const StarIcon = () => (
 const SettingsIcon = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="12" cy="12" r="3"></circle>
-    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83 0 2 2 0 1 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
   </svg>
 )
 
@@ -32,31 +33,71 @@ const ShareIcon = () => (
   </svg>
 )
 
-// Mock user data
-const userData = {
-  name: 'Juan Rodriguez',
-  avatar: 'https://ui-avatars.com/api/?name=Juan+Rodriguez&background=10B981&color=fff',
-  level: 5,
-  role: 'Real Estate Apprentice',
-  memberSince: 'Ene 2024',
-  modulesCompleted: 8,
-  totalModules: 10,
-  achievements: 12,
-  currentXP: 4532,
-  targetXP: 5000,
-  streak: 7,
-  houseLevel: 'Cabana Moderna',
-}
-
 const weekDays = ['L', 'M', 'M', 'J', 'V', 'S', 'D']
 
 export default function ProfilePage() {
+  const { user, loading } = useUser()
+
+  if (loading) {
+    return (
+      <div className="flex flex-col min-h-screen lg:flex-row bg-[#0F172A]">
+        <MainNav />
+        <main className="flex-1 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-kasa-primary"></div>
+        </main>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return (
+      <div className="flex flex-col min-h-screen lg:flex-row bg-[#0F172A]">
+        <MainNav />
+        <main className="flex-1 flex items-center justify-center">
+          <p className="text-white">No se pudo cargar la información del usuario.</p>
+        </main>
+      </div>
+    )
+  }
+
+  const displayName = user.display_name || `${user.names_first || ''} ${user.names_last || ''}`.trim() || user.email
+  const avatarUrl = user.profile_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=10B981&color=fff`
+  const level = user.current_level || 1
+  const xp = user.xp || 0
+  const targetXP = (level * 1000)
+  const streak = user.streak || 0
+
+  // Dynamic role based on level
+  const getRole = (lvl: number) => {
+    if (lvl >= 20) return "Real Estate Visionary"
+    if (lvl >= 15) return "Expert Investor"
+    if (lvl >= 10) return "Professional Consultant"
+    if (lvl >= 5) return "Real Estate Specialist"
+    return "Real Estate Apprentice"
+  }
+
+  // Format memberSince date
+  const formatMemberSince = (dateString?: string) => {
+    if (!dateString) return "Reciente"
+    const date = new Date(dateString)
+    const month = date.toLocaleString('es-ES', { month: 'short' })
+    const year = date.getFullYear()
+    return `${month.charAt(0).toUpperCase() + month.slice(1)} ${year}`
+  }
+
+  // Dynamic House Level based on level
+  const getHouseLevel = (lvl: number) => {
+    if (lvl >= 15) return "Villa de Lujo"
+    if (lvl >= 10) return "Residencia Moderna"
+    if (lvl >= 5) return "Cabana de Diseno"
+    return "Cabana Inicial"
+  }
+
   return (
-    <div className="flex flex-col min-h-screen lg:flex-row">
+    <div className="flex flex-col min-h-screen lg:flex-row bg-[#0F172A]">
       <MainNav />
 
       <main className="flex-1 p-6 pb-[calc(80px+1.5rem)] w-full lg:p-12 lg:pb-12 lg:max-w-[900px] lg:mx-auto">
-        {/* Header */}
         <header className="flex justify-between items-center mb-10">
           <div className="w-10 h-10 flex items-center justify-center text-white cursor-pointer">
             <SettingsIcon />
@@ -68,36 +109,36 @@ export default function ProfilePage() {
         </header>
 
         <ProfileHero
-          name={userData.name}
-          avatar={userData.avatar}
-          level={userData.level}
-          role={userData.role}
-          memberSince={userData.memberSince}
+          name={displayName}
+          avatar={avatarUrl}
+          level={level}
+          role={getRole(level)}
+          memberSince={formatMemberSince(user.created_at)}
         />
 
-        {/* Stats grid */}
         <section className="grid grid-cols-2 gap-4 mb-6">
           <StatCard
-            value={`${userData.modulesCompleted}/${userData.totalModules}`}
+            value={`${user.modules_completed || 0}/${user.total_modules || 10}`}
             label="Modulos"
             icon={<BookIcon />}
           />
           <StatCard
-            value={userData.achievements}
+            value={user.modules_completed ? Math.floor(user.modules_completed * 1.5) : 0}
             label="Logros"
             icon={<StarIcon />}
           />
         </section>
 
+
         <XPCard
-          currentXP={userData.currentXP}
-          targetXP={userData.targetXP}
-          currentLevel={userData.level}
+          currentXP={xp}
+          targetXP={targetXP}
+          currentLevel={level}
         />
 
-        <StreakCard streak={userData.streak} days={weekDays} />
+        <StreakCard streak={streak} days={weekDays} />
 
-        <HousePreview level={userData.houseLevel} />
+        <HousePreview level={getHouseLevel(level)} />
       </main>
     </div>
   )

@@ -17,6 +17,17 @@ export interface UserProfile {
     email: string;
     names_first?: string;
     names_last?: string;
+    // Kasa Learn Journey data
+    current_level?: number;
+    xp?: number;
+    streak?: number;
+    profile_url?: string;
+    current_module?: string;
+    display_name?: string;
+    created_at?: string;
+    // Stats
+    modules_completed?: number;
+    total_modules?: number;
 }
 
 interface UserContextType {
@@ -47,63 +58,89 @@ export function UserProvider({ children }: { children: ReactNode }) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const isFetching = useRef(false);
+    const lastUserId = useRef<string | null>(null);
 
     const fetchProfile = useCallback(async (session: any) => {
-        if (!session?.user?.id || isFetching.current) return;
+        const userId = session?.user?.id;
+
+        // Prevent redundant fetches
+        if (!userId || isFetching.current || (user && lastUserId.current === userId)) {
+            if (userId && loading) setLoading(false);
+            return;
+        }
 
         try {
             isFetching.current = true;
             setError(null);
-            // No seteamos loading(true) aquí para no bloquear la interfaz si ya está cargando algo
+            lastUserId.current = userId;
 
-            console.log(`📡 [UserContext] Intentando obtener perfil para ${session.user.id}...`);
+            console.log(`📡 [UserContext] Intentando obtener perfil para ${userId}...`);
 
-            // Usamos un timeout manual o una carrera para que no se cuelgue infinito
-            const profilePromise = supabase
-                .from("profiles")
-                .select("id, user_id, email, names_first, names_last")
-                .eq("user_id", session.user.id)
-                .single();
+            // Use Promise.all to fetch everything in parallel and reduce total request time
+            const [publicRes, learnRes, completedRes, totalRes] = await Promise.all([
+                // 1. Public profiles
+                supabase
+                    .from("profiles")
+                    .select("id, user_id, email, names_first, names_last")
+                    .eq("user_id", userId)
+                    .single(),
 
-            const { data, error: profileError } = await profilePromise;
+                // 2. Learn journey user data
+                supabase
+                    .schema('kasa_learn_journey')
+                    .from('user')
+                    .select('current_level, xp, streak, profile_url, current_module, display_name, created_at')
+                    .eq('user_id', userId)
+                    .single(),
 
-            if (profileError) {
-                console.warn("⚠️ [UserContext] Perfil no encontrado en 'public', continuando sin perfil extendido.");
-            } else {
-                console.log("✅ [UserContext] Perfil cargado.");
-                setUser(data);
-            }
+                // 3. Modules completed (Count)
+                supabase
+                    .schema('kasa_learn_journey')
+                    .from('user_module_progress')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('user_id', userId)
+                    .eq('status', 'completed'),
+
+                // 4. Total modules (Count)
+                supabase
+                    .schema('kasa_learn_journey')
+                    .from('module')
+                    .select('*', { count: 'exact', head: true })
+            ]);
+
+            if (publicRes.error) console.warn("⚠️ [UserContext] Perfil público no encontrado.");
+            if (learnRes.error) console.warn("⚠️ [UserContext] Perfil de aprendizaje no encontrado.");
+
+            const combinedUser: UserProfile = {
+                ...(publicRes.data || { id: 0, user_id: userId, email: session.user.email }),
+                ...learnRes.data,
+                modules_completed: completedRes.count || 0,
+                total_modules: totalRes.count || 0
+            };
+
+            console.log("✅ [UserContext] Perfil cargado:", combinedUser);
+            setUser(combinedUser);
         } catch (err: any) {
             console.error("❌ [UserContext] Error en fetchProfile:", err.message);
         } finally {
             setLoading(false);
             isFetching.current = false;
         }
-    }, []);
+    }, [user, loading]);
 
     useEffect(() => {
         let mounted = true;
 
-        const initAuth = async () => {
-            try {
-                const { data: { session } } = await supabase.auth.getSession();
-                if (session && mounted) {
-                    await fetchProfile(session);
-                } else {
-                    if (mounted) setLoading(false);
-                }
-            } catch (err) {
-                if (mounted) setLoading(false);
-            }
-        };
-
-        initAuth();
-
+        // No individual initAuth needed, onAuthStateChange fires with initial session
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-            console.log("🔔 [UserContext] Evento:", event);
-            if (session && mounted) fetchProfile(session);
-            else if (!session && mounted) {
+            console.log("🔔 [UserContext] Auth Event:", event);
+            if (!mounted) return;
+
+            if (session) {
+                fetchProfile(session);
+            } else {
                 setUser(null);
+                lastUserId.current = null;
                 setLoading(false);
             }
         });
@@ -119,7 +156,10 @@ export function UserProvider({ children }: { children: ReactNode }) {
             user,
             loading,
             error,
-            refreshUser: async () => { },
+            refreshUser: async () => {
+                const { data: { session } } = await supabase.auth.getSession();
+                if (session) await fetchProfile(session);
+            },
             submitVerification: async () => { },
             submitKyc: async () => { },
             updateProfile: async () => { },

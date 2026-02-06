@@ -5,15 +5,6 @@ import { UserStats } from '@/types'
 import { useUser } from '@/context/UserContext'
 import { useState, useEffect } from 'react'
 
-// Mock data - will be replaced with API calls
-const mockStats: UserStats = {
-  level: 12,
-  streak: 15,
-  xp: 2450,
-  xpToNextLevel: 3000,
-  weeklyProgress: 85,
-}
-
 const lockedItems = [
   {
     title: 'Analisis de Mercado Local',
@@ -36,15 +27,6 @@ export default function DashboardPage() {
   const [showDashboard, setShowDashboard] = useState(false)
 
   useEffect(() => {
-    // Check if user has already synced in this session
-    // const hasSynced = sessionStorage.getItem('kasa_has_synced')
-
-    /* if (hasSynced) {
-      setIsSyncing(false)
-      setShowDashboard(true)
-      return
-    } */
-
     // Stage 1: Control animations in SyncScreen (Start exit sync state)
     const syncFinishTimer = setTimeout(() => {
       setIsExitingSync(true)
@@ -63,19 +45,26 @@ export default function DashboardPage() {
     }
   }, [])
 
-  const userName = user ? `${user.names_first || ''} ${user.names_last || ''}`.trim() || 'Estudiante' : 'Estudiante'
+  const displayName = user?.display_name || (user ? `${user.names_first || ''} ${user.names_last || ''}`.trim() : 'Estudiante') || 'Estudiante'
+
+  const userStats: UserStats = {
+    level: user?.current_level || 1,
+    streak: user?.streak || 0,
+    xp: user?.xp || 0,
+    xpToNextLevel: (user?.current_level || 1) * 1000,
+    weeklyProgress: user?.modules_completed ? Math.min(Math.round((user.modules_completed / 10) * 100), 100) : 0,
+  }
 
   return (
     <>
-
       <div style={{ display: isSyncing ? 'block' : 'none' }}>
         <SyncScreen user={user} isExiting={isExitingSync} />
       </div>
 
       <DashboardContent
         showDashboard={showDashboard}
-        userName={userName}
-        mockStats={mockStats}
+        userName={displayName}
+        userStats={userStats}
         lockedItems={lockedItems}
       />
     </>
