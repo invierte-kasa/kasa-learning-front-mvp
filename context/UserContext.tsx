@@ -74,12 +74,12 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
             // Use Promise.all to fetch everything in parallel and reduce total request time
             const [publicRes, learnRes, completedRes, totalRes] = await Promise.all([
-                // 1. Public profiles
+                // 1. User profile data - Seleccionamos todo (*) para verificar nombres de columnas
                 supabase
                     .from("profiles")
-                    .select("user_id, email, names_first, avatar_url")
+                    .select("*")
                     .eq("user_id", userId)
-                    .single(),
+                    .maybeSingle(),
 
                 // 2. Learn journey user data
                 supabase
@@ -87,7 +87,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
                     .from('user')
                     .select('*')
                     .eq('user_id', userId)
-                    .single(),
+                    .maybeSingle(),
 
                 // 3. Modules completed (Count)
                 supabase
@@ -104,29 +104,43 @@ export function UserProvider({ children }: { children: ReactNode }) {
                     .select('id', { count: 'exact' })
             ]);
 
-            if (publicRes.error) console.warn("⚠️ [UserContext] Perfil público no encontrado:", publicRes.error.message);
-            if (learnRes.error) console.warn("⚠️ [UserContext] Perfil de aprendizaje no encontrado:", learnRes.error.message);
+            console.log("🔍 [UserContext] Debug Profiles:", { data: publicRes.data, error: publicRes.error });
+            console.log("🔍 [UserContext] Debug Learn:", { data: learnRes.data, error: learnRes.error });
 
+            if (publicRes.error) {
+                console.warn("⚠️ [UserContext] Perfil (profile schema) no encontrado:", publicRes.error.message);
+            }
+            if (learnRes.error) {
+                console.warn("⚠️ [UserContext] Perfil (kasa_learn_journey) no encontrado:", learnRes.error.message);
+            }
+
+            // Construir el objeto con valores por defecto para que nunca lleguen undefined a la UI
             const combinedUser: UserProfile = {
-                // Base data
+                // Datos base (siempre presentes en la sesión de Supabase Auth)
                 user_id: userId,
-                email: publicRes.data?.email || session.user.email,
+                email: session.user.email || publicRes.data?.email || '',
 
-                // Public Profile Data
-                names_first: publicRes.data?.names_first,
+                // Datos de perfil (Usa url_profile de la tabla profiles como prioridad)
+                names_first: publicRes.data?.names_first || '',
+                url_profile: publicRes.data?.url_profile || learnRes.data?.profile_url || '',
 
-                // Learn Journey Data
-                ...learnRes.data,
+                // Gamificación: Valores por defecto si no existen en la DB
+                current_level: learnRes.data?.current_level || 1,
+                xp: learnRes.data?.xp || 0,
+                streak: learnRes.data?.streak || 0,
+                display_name: publicRes.data?.names_first || learnRes.data?.display_name || '',
+                created_at: learnRes.data?.created_at || new Date().toISOString(),
 
-                // Ensuring we have the preferred avatar URL
-                url_profile: publicRes.data?.avatar_url || learnRes.data?.profile_url,
+                // Mezclar datos de la base de datos (sobrescriben los defaults si existen)
+                ...(learnRes.data || {}),
 
-                // Stats
+
+                // Estadísticas
                 modules_completed: completedRes.count || 0,
                 total_modules: totalRes.count || 0
             };
 
-            console.log("✅ [UserContext] Perfil cargado:", combinedUser);
+            console.log("✅ [UserContext] Perfil cargado exitosamente:", combinedUser);
             setUser(combinedUser);
         } catch (err: any) {
             console.error("❌ [UserContext] Error en fetchProfile:", err.message);

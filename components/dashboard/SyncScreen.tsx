@@ -72,9 +72,9 @@ export function SyncScreen() {
               <img src="https://res.cloudinary.com/dtgrcjcbd/image/upload/v1756610794/Logo_dz1wjo.png" className="w-[100px] sm:w-[140px] lg:w-[180px] h-auto" alt="Kasa" />
             </div>
 
-            <nav className="absolute top-0 right-0 h-full w-7/12 sm:w-8/12 lg:w-9/12 bg-[#101a28] rounded-tl-[30px] rounded-tr-[30px] px-10 flex items-center justify-between">
+            <nav className="absolute top-0 right-0 h-full w-7/12 sm:w-8/12 lg:w-9/12 bg-[#101a28] rounded-tl-[30px] rounded-tr-[30px] px-4 xl:px-10 flex items-center justify-between">
               <div className="hidden lg:flex flex-1 justify-between items-center pr-2">
-                <ul className="flex items-center gap-4 text-white font-medium" style={{ fontFamily: '__Montserrat_ca911e' }}>
+                <ul className="flex items-center gap-2 xl:gap-3 text-white font-medium text-sm xl:text-base" style={{ fontFamily: '__Montserrat_ca911e' }}>
                   <li><a href="#" className="px-3 py-2 rounded-xl transition-all whitespace-nowrap hover:bg-black/20">Aprende</a></li>
                   <li><a href="#" className="px-3 py-2 rounded-xl transition-all whitespace-nowrap bg-black/30 hover:bg-black/20">Kasa Learn</a></li>
                   <li><a href="#" className="px-3 py-2 rounded-xl transition-all whitespace-nowrap hover:bg-black/20">Blog</a></li>
@@ -82,27 +82,25 @@ export function SyncScreen() {
                   <li><a href="#" className="px-3 py-2 rounded-xl transition-all whitespace-nowrap hover:bg-black/20">Nosotros</a></li>
                 </ul>
 
-                <div className="flex items-center gap-8">
+                <div className="flex items-center gap-2 xl:gap-4">
                   <button id="dropdownNotificationButton" className="relative inline-flex items-center text-sm font-medium text-center text-white hover:text-gray-200 focus:outline-none transition-transform duration-200 hover:scale-110" type="button">
                     <svg stroke="currentColor" fill="currentColor" strokeWidth="0" viewBox="0 0 448 512" className="w-6 h-6" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
                       <path d="M439.39 362.29c-19.32-20.76-55.47-51.99-55.47-154.29 0-77.7-54.48-139.9-127.94-155.16V32c0-17.67-14.32-32-31.98-32s-31.98 14.33-31.98 32v20.84C118.56 68.1 64.08 130.3 64.08 208c0 102.3-36.15 133.53-55.47 154.29-6 6.45-8.66 14.16-8.61 21.71.11 16.4 12.98 32 32.1 32h383.8c19.12 0 32-15.6 32.1-32 .05-7.55-2.61-15.27-8.61-21.71zM67.53 368c21.22-27.97 44.42-74.33 44.53-159.42 0-.2-.06-.38-.06-.58 0-61.86 50.14-112 112-112s112 50.14 112 112c0 .2-.06.38-.06.58.11 85.1 23.31 131.46 44.53 159.42H67.53zM224 512c35.32 0 63.97-28.65 63.97-64H160.03c0 35.35 28.65 64 63.97 64z"></path>
                     </svg>
                     <div className="absolute block w-3 h-3 bg-red-500 border-2 border-white rounded-full top-0 start-2.5"></div>
                   </button>
-                  <div className="flex items-center gap-8">
-                    <span className="flex items-center gap-3 text-white">
+                  <div className="flex items-center gap-2 xl:gap-4">
+                    <span className="flex items-center gap-2 xl:gap-3 text-white">
                       <div className="w-10 h-10 bg-gray-700 border border-gray-600 rounded-full flex items-center justify-center text-sm font-bold overflow-hidden">
-
                         <img
                           src={UserProfile}
                           alt={userName}
                           className="w-10 h-10 object-cover"
                         />
-
                       </div>
-                      <span className="text-base font-medium whitespace-nowrap">Hey, {userName}!</span>
+                      <span className="text-sm xl:text-base font-medium whitespace-nowrap">Hey, {userName}!</span>
                     </span>
-                    <button onClick={handleLogout} className="bg-[#00cc65] text-white border-none h-10 px-6 text-sm font-bold cursor-pointer transition-colors duration-200 whitespace-nowrap inline-flex items-center justify-center hover:bg-[#00a377]" style={{ borderRadius: 'calc(0.625rem + 4px)' }}>Cerrar Sesión</button>
+                    <button onClick={handleLogout} className="bg-[#00cc65] text-white border-none h-10 px-4 xl:px-6 text-xs xl:text-sm font-bold cursor-pointer transition-colors duration-200 whitespace-nowrap inline-flex items-center justify-center hover:bg-[#00a377]" style={{ borderRadius: 'calc(0.625rem + 4px)' }}>Cerrar Sesión</button>
                   </div>
                 </div>
               </div>
