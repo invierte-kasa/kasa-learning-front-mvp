@@ -8,15 +8,12 @@ import { AnimatePresence, motion } from 'motion/react'
 import { useState, useEffect } from 'react'
 import styles from './SyncScreen.module.css'
 
-interface SyncScreenProps {
-  user: UserProfile | null
-  isExiting: boolean
-}
+import { useUser } from '@/context/UserContext'
 
-export function SyncScreen({ user, isExiting }: SyncScreenProps) {
+export function SyncScreen() {
+  const { user } = useUser()
   const userName = user?.names_first || " "
-  const userLastName = user?.names_last || ''
-  const userInitials = userName.charAt(0).toUpperCase() + (userLastName ? userLastName.charAt(0).toUpperCase() : '')
+  const UserProfile = user?.url_profile || " "
   const router = useRouter()
   const supabase = createClient()
   const [isVisible, setIsVisible] = useState(true)
@@ -24,6 +21,7 @@ export function SyncScreen({ user, isExiting }: SyncScreenProps) {
   const [headerY, setHeaderY] = useState(0)
   const [whatsappX, setWhatsappX] = useState(0)
 
+  console.log(user)
   useEffect(() => {
     // 1. Desaparece el contenido (Breadcrumbs/Loader) - 2s
     const visibilityTimer = setTimeout(() => {
@@ -93,7 +91,15 @@ export function SyncScreen({ user, isExiting }: SyncScreenProps) {
                   </button>
                   <div className="flex items-center gap-8">
                     <span className="flex items-center gap-3 text-white">
-                      <div className="w-10 h-10 bg-gray-700 border border-gray-600 rounded-full flex items-center justify-center text-sm font-bold">{userInitials}</div>
+                      <div className="w-10 h-10 bg-gray-700 border border-gray-600 rounded-full flex items-center justify-center text-sm font-bold overflow-hidden">
+
+                        <img
+                          src={UserProfile}
+                          alt={userName}
+                          className="w-10 h-10 object-cover"
+                        />
+
+                      </div>
                       <span className="text-base font-medium whitespace-nowrap">Hey, {userName}!</span>
                     </span>
                     <button onClick={handleLogout} className="bg-[#00cc65] text-white border-none h-10 px-6 text-sm font-bold cursor-pointer transition-colors duration-200 whitespace-nowrap inline-flex items-center justify-center hover:bg-[#00a377]" style={{ borderRadius: 'calc(0.625rem + 4px)' }}>Cerrar Sesión</button>

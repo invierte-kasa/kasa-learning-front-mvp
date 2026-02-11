@@ -12,11 +12,11 @@ import {
 import { createClient } from "@/utils/supabase/client";
 
 export interface UserProfile {
-    id: number;
     user_id: string;
     email: string;
     names_first?: string;
     names_last?: string;
+    url_profile?: string;
     // Kasa Learn Journey data
     current_level?: number;
     xp?: number;
@@ -35,10 +35,6 @@ interface UserContextType {
     loading: boolean;
     error: string | null;
     refreshUser: () => Promise<void>;
-    submitVerification: (formData: FormData) => Promise<any>;
-    submitKyc: (formData: FormData) => Promise<any>;
-    updateProfile: (data: Record<string, any>) => Promise<any>;
-    getProfileImage: (userId: string) => Promise<string | null>;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -81,7 +77,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
                 // 1. Public profiles
                 supabase
                     .from("profiles")
-                    .select("id, user_id, email, names_first, names_last")
+                    .select("user_id, email, names_first, avatar_url")
                     .eq("user_id", userId)
                     .single(),
 
@@ -89,7 +85,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
                 supabase
                     .schema('kasa_learn_journey')
                     .from('user')
-                    .select('current_level, xp, streak, profile_url, current_module, display_name, created_at')
+                    .select('*')
                     .eq('user_id', userId)
                     .single(),
 
@@ -108,12 +104,24 @@ export function UserProvider({ children }: { children: ReactNode }) {
                     .select('id', { count: 'exact' })
             ]);
 
-            if (publicRes.error) console.warn("⚠️ [UserContext] Perfil público no encontrado.");
-            if (learnRes.error) console.warn("⚠️ [UserContext] Perfil de aprendizaje no encontrado.");
+            if (publicRes.error) console.warn("⚠️ [UserContext] Perfil público no encontrado:", publicRes.error.message);
+            if (learnRes.error) console.warn("⚠️ [UserContext] Perfil de aprendizaje no encontrado:", learnRes.error.message);
 
             const combinedUser: UserProfile = {
-                ...(publicRes.data || { id: 0, user_id: userId, email: session.user.email }),
+                // Base data
+                user_id: userId,
+                email: publicRes.data?.email || session.user.email,
+
+                // Public Profile Data
+                names_first: publicRes.data?.names_first,
+
+                // Learn Journey Data
                 ...learnRes.data,
+
+                // Ensuring we have the preferred avatar URL
+                url_profile: publicRes.data?.avatar_url || learnRes.data?.profile_url,
+
+                // Stats
                 modules_completed: completedRes.count || 0,
                 total_modules: totalRes.count || 0
             };
@@ -159,11 +167,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
             refreshUser: async () => {
                 const { data: { session } } = await supabase.auth.getSession();
                 if (session) await fetchProfile(session);
-            },
-            submitVerification: async () => { },
-            submitKyc: async () => { },
-            updateProfile: async () => { },
-            getProfileImage: async () => null
+            }
         }}>
             {children}
         </UserContext.Provider>

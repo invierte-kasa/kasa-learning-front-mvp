@@ -58,7 +58,7 @@ export default function DashboardPage() {
   return (
     <>
       <div style={{ display: isSyncing ? 'block' : 'none' }}>
-        <SyncScreen user={user} isExiting={isExitingSync} />
+        <SyncScreen />
       </div>
 
       <DashboardContent
