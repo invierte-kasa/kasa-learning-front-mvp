@@ -21,7 +21,6 @@ export function SyncScreen() {
   const [headerY, setHeaderY] = useState(0)
   const [whatsappX, setWhatsappX] = useState(0)
 
-  console.log(user)
   useEffect(() => {
     // 1. Desaparece el contenido (Breadcrumbs/Loader) - 2s
     const visibilityTimer = setTimeout(() => {

@@ -21,6 +21,8 @@ interface SectionData {
   topic: string
 }
 
+const supabase = createClient()
+
 function SectionsContent() {
   const [sections, setSections] = useState<SectionData[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -28,28 +30,42 @@ function SectionsContent() {
   const [shouldAnimate, setShouldAnimate] = useState(false)
   const [isExitingPage, setIsExitingPage] = useState(false)
   const router = useRouter()
-  const supabase = createClient()
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        console.log("🚀 [SectionsPage] Petición directa GET a secciones...");
+        console.log("🚀 [SectionsPage] Intentando obtener secciones...");
         setIsLoading(true);
 
+        // Intentamos obtener las secciones del esquema kasa_learn_journey
         const { data, error: fetchError } = await supabase
-          .schema('kasa_learn_journey')
+          .schema('kasa_learn_journey ')
           .from('section')
           .select('*')
           .order('created_at', { ascending: true });
 
         if (fetchError) {
-          throw fetchError;
-        }
+          console.error("❌ [SectionsPage] Error con esquema kasa_learn_journey:", fetchError.message);
 
-        console.log("✅ [SectionsPage] Secciones obtenidas:", data?.length);
-        setSections(data || []);
+          // Fallback al esquema public por si acaso la tabla está ahí
+          console.log("🔄 [SectionsPage] Intentando fallback al esquema public...");
+          const { data: publicData, error: publicError } = await supabase
+            .from('section')
+            .select('*')
+            .order('created_at', { ascending: true });
+
+          if (publicError) {
+            console.error("❌ [SectionsPage] Error fatal en esquema public:", publicError.message);
+            throw fetchError; // Lanzamos el error original si ambos fallan
+          }
+
+          console.log("✅ [SectionsPage] Secciones obtenidas del esquema public");
+          setSections(publicData || []);
+        } else {
+          console.log("✅ [SectionsPage] Secciones obtenidas de kasa_learn_journey");
+          setSections(data || []);
+        }
       } catch (err: any) {
-        console.error("💥 [SectionsPage] Error:", err.message);
         setError(err.message);
       } finally {
         setIsLoading(false);
@@ -66,8 +82,7 @@ function SectionsContent() {
 
     setIsExitingPage(true)
 
-    // Exit sequence: Sections exit first (delay 0s), then Header (delay 0.3s)
-    // Wait total 0.8s for transition
+    // Exit sequence
     setTimeout(() => {
       router.push(href)
     }, 800)
@@ -111,6 +126,21 @@ function SectionsContent() {
               {[1, 2, 3, 4].map((i) => (
                 <div key={i} className="h-[240px] rounded-3xl bg-kasa-card/50 animate-pulse border border-kasa-border" />
               ))}
+            </motion.div>
+          ) : error ? (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="col-span-full py-20 text-center border-2 border-dashed border-red-500/20 rounded-3xl bg-red-500/5"
+            >
+              <p className="text-red-400 mb-2 font-bold">Error al cargar secciones</p>
+              <p className="text-red-400/60 text-sm">{error}</p>
+              <button
+                onClick={() => window.location.reload()}
+                className="mt-4 px-6 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-xl transition-colors text-sm font-bold"
+              >
+                Reintentar
+              </button>
             </motion.div>
           ) : (
             <motion.div
