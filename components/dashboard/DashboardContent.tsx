@@ -8,20 +8,129 @@ import { UserStats } from '@/types'
 import { useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { motion } from 'motion/react'
+import { createClient } from '@/utils/supabase/client'
+import { useUser } from '@/context/UserContext'
 
 interface DashboardContentProps {
     showDashboard: boolean
     userName: string
     userStats: UserStats
-    lockedItems: any[]
 }
 
-export function DashboardContent({ showDashboard, userName, userStats, lockedItems }: DashboardContentProps) {
+// Tipo para el módulo activo del usuario
+interface ActiveModuleData {
+    id: string
+    title: string
+    module_number: number
+    section_id: string
+}
+
+// Tipo para las secciones bloqueadas
+interface LockedSectionData {
+    title: string
+    subtitle: string
+    icon: 'chart' | 'credit-card'
+    href: string
+}
+
+const supabase = createClient()
+
+export function DashboardContent({ showDashboard, userName, userStats }: DashboardContentProps) {
     const [navVisible, setNavVisible] = useState(false)
     const [contentVisible, setContentVisible] = useState(false)
     const [isMobile, setIsMobile] = useState(false)
     const [isExitingPage, setIsExitingPage] = useState(false)
     const router = useRouter()
+    const { user } = useUser()
+
+    // Estado para datos reales
+    const [activeModule, setActiveModule] = useState<ActiveModuleData | null>(null)
+    const [moduleProgress, setModuleProgress] = useState(0)
+    const [lockedItems, setLockedItems] = useState<LockedSectionData[]>([])
+    const [dataLoaded, setDataLoaded] = useState(false)
+
+    // Fetch de datos reales del dashboard
+    useEffect(() => {
+        if (!user?.user_id) return
+
+        const fetchDashboardData = async () => {
+            try {
+                // 1. Obtener el progreso de módulos del usuario
+                const { data: userProgress } = await supabase
+                    .schema('kasa_learn_journey')
+                    .from('user_module_progress')
+                    .select('module_id, status, xp_earned')
+                    .eq('user_id', user.user_id)
+
+                const completedModuleIds = new Set(
+                    (userProgress || [])
+                        .filter((p: any) => p.status === 'completed')
+                        .map((p: any) => p.module_id)
+                )
+
+                // 2. Obtener todos los módulos con su sección
+                const { data: allModules } = await supabase
+                    .schema('kasa_learn_journey')
+                    .from('module')
+                    .select('id, title, module_number, section_id, xp')
+                    .order('module_number', { ascending: true })
+
+                if (allModules && allModules.length > 0) {
+                    // Encontrar el primer módulo no completado (el módulo activo)
+                    const nextModule = allModules.find(
+                        (m: any) => !completedModuleIds.has(m.id)
+                    )
+
+                    if (nextModule) {
+                        setActiveModule(nextModule)
+                        // Calcular progreso: módulos completados / total módulos * 100
+                        const totalModules = allModules.length
+                        const completedCount = completedModuleIds.size
+                        setModuleProgress(
+                            totalModules > 0 ? Math.round((completedCount / totalModules) * 100) : 0
+                        )
+                    }
+
+                    // 3. Obtener secciones para los módulos bloqueados
+                    const { data: sections } = await supabase
+                        .schema('kasa_learn_journey')
+                        .from('section')
+                        .select('id, title')
+
+                    // Crear items bloqueados con las secciones que tienen módulos no completados
+                    if (sections && sections.length > 0) {
+                        const sectionMap = new Map(sections.map((s: any) => [s.id, s.title]))
+
+                        // Obtener secciones con módulos bloqueados (los siguientes al módulo activo)
+                        const activeModuleIndex = allModules.findIndex(
+                            (m: any) => !completedModuleIds.has(m.id)
+                        )
+
+                        // Los módulos después del activo son los "bloqueados"
+                        const futureModules = allModules.slice(activeModuleIndex + 1)
+                        const futureSectionIds = [...new Set(futureModules.map((m: any) => m.section_id))]
+
+                        const locked: LockedSectionData[] = futureSectionIds
+                            .slice(0, 3) // Máximo 3 items bloqueados
+                            .map((sectionId, index) => ({
+                                title: sectionMap.get(sectionId) || 'Sección Avanzada',
+                                subtitle: `Bloqueado - Completa módulos previos`,
+                                icon: index % 2 === 0 ? 'chart' as const : 'credit-card' as const,
+                                href: '/sections',
+                            }))
+
+                        setLockedItems(locked)
+                    }
+                }
+            } catch (err) {
+                console.error('[DashboardContent] Error fetching dashboard data:', err)
+            } finally {
+                setDataLoaded(true)
+            }
+        }
+
+        fetchDashboardData()
+    }, [user?.user_id])
 
     useEffect(() => {
         // Detectar si es móvil para cambiar la dirección de la animación
@@ -189,12 +298,21 @@ export function DashboardContent({ showDashboard, userName, userStats, lockedIte
                                             <span className="w-1.5 h-6 bg-[#10B981] rounded-full inline-block"></span>
                                             Tu Siguiente Módulo
                                         </h3>
-                                        <LearningCard
-                                            moduleNumber={4}
-                                            title="Fundamentos de Valuación de Propiedades"
-                                            progress={85}
-                                            href="/sections"
-                                        />
+                                        {activeModule ? (
+                                            <LearningCard
+                                                moduleNumber={activeModule.module_number}
+                                                title={activeModule.title}
+                                                progress={moduleProgress}
+                                                href={`/sections/${activeModule.section_id}`}
+                                            />
+                                        ) : dataLoaded ? (
+                                            <div className="bg-kasa-card border border-kasa-border rounded-2xl p-8 text-center">
+                                                <p className="text-kasa-primary font-bold text-lg mb-2">🎉 ¡Felicidades!</p>
+                                                <p className="text-text-muted">Has completado todos los módulos disponibles.</p>
+                                            </div>
+                                        ) : (
+                                            <div className="h-[200px] bg-kasa-card/50 animate-pulse rounded-2xl border border-kasa-border" />
+                                        )}
                                     </div>
                                 </motion.div>
 
@@ -216,7 +334,18 @@ export function DashboardContent({ showDashboard, userName, userStats, lockedIte
                                 >
                                     <div className="space-y-6">
                                         <h3 className="text-xl font-bold text-slate-200">Próximas Metas</h3>
-                                        <LockedSection items={lockedItems} />
+                                        {lockedItems.length > 0 ? (
+                                            <LockedSection items={lockedItems} />
+                                        ) : dataLoaded ? (
+                                            <div className="bg-kasa-card border border-kasa-border rounded-2xl p-6 text-center">
+                                                <p className="text-text-muted text-sm">No hay más secciones bloqueadas.</p>
+                                            </div>
+                                        ) : (
+                                            <div className="space-y-4">
+                                                <div className="h-[72px] bg-kasa-card/50 animate-pulse rounded-2xl border border-kasa-border" />
+                                                <div className="h-[72px] bg-kasa-card/50 animate-pulse rounded-2xl border border-kasa-border" />
+                                            </div>
+                                        )}
                                     </div>
                                 </motion.div>
                             </div>

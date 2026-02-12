@@ -5,21 +5,6 @@ import { UserStats } from '@/types'
 import { useUser } from '@/context/UserContext'
 import { useState, useEffect } from 'react'
 
-const lockedItems = [
-  {
-    title: 'Analisis de Mercado Local',
-    subtitle: 'Bloqueado - Nivel 3 requerido',
-    icon: 'chart' as const,
-    href: '/sections',
-  },
-  {
-    title: 'Financiamiento y Credito',
-    subtitle: 'Bloqueado',
-    icon: 'credit-card' as const,
-    href: '/sections',
-  },
-]
-
 export default function DashboardPage() {
   const { user } = useUser()
   const [isSyncing, setIsSyncing] = useState(true)
@@ -52,7 +37,7 @@ export default function DashboardPage() {
     streak: user?.streak || 0,
     xp: user?.xp || 0,
     xpToNextLevel: (user?.current_level || 1) * 1000,
-    weeklyProgress: user?.modules_completed ? Math.min(Math.round((user.modules_completed / 10) * 100), 100) : 0,
+    weeklyProgress: user?.modules_completed ? Math.min(Math.round((user.modules_completed / (user.total_modules || 1)) * 100), 100) : 0,
   }
 
   return (
@@ -65,7 +50,6 @@ export default function DashboardPage() {
         showDashboard={showDashboard}
         userName={displayName}
         userStats={userStats}
-        lockedItems={lockedItems}
       />
     </>
   )
