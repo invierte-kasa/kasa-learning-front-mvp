@@ -15,6 +15,7 @@ interface DashboardContentProps {
     showDashboard: boolean
     userName: string
     userStats: UserStats
+    avatarUrl: string
 }
 
 // Tipo para el módulo activo del usuario
@@ -35,7 +36,7 @@ interface LockedSectionData {
 
 const supabase = createClient()
 
-export function DashboardContent({ showDashboard, userName, userStats }: DashboardContentProps) {
+export function DashboardContent({ showDashboard, userName, userStats, avatarUrl }: DashboardContentProps) {
     const [navVisible, setNavVisible] = useState(false)
     const [contentVisible, setContentVisible] = useState(false)
     const [isMobile, setIsMobile] = useState(false)
@@ -228,7 +229,7 @@ export function DashboardContent({ showDashboard, userName, userStats }: Dashboa
                                     delay: isExitingPage ? 0.3 : 0.15
                                 }}
                             >
-                                <Header userName={userName} />
+                                <Header userName={userName} userAvatar={avatarUrl} />
                             </motion.div>
 
                             {/* Stats & Welcome con entrada estilo "Salto desde abajo" */}

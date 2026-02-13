@@ -50,6 +50,7 @@ export default function DashboardPage() {
         showDashboard={showDashboard}
         userName={displayName}
         userStats={userStats}
+        avatarUrl={user?.url_profile || ''}
       />
     </>
   )

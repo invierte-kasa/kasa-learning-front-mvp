@@ -19,12 +19,20 @@ interface SectionData {
   id: string
   title: string
   topic: string
+  level: number
+}
+
+interface ModuleCountData {
+  section_id: string
+  total: number
+  completed: number
 }
 
 const supabase = createClient()
 
 function SectionsContent() {
   const [sections, setSections] = useState<SectionData[]>([])
+  const [moduleCounts, setModuleCounts] = useState<Map<string, ModuleCountData>>(new Map())
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [shouldAnimate, setShouldAnimate] = useState(false)
@@ -37,33 +45,55 @@ function SectionsContent() {
         console.log("🚀 [SectionsPage] Intentando obtener secciones...");
         setIsLoading(true);
 
-        // Intentamos obtener las secciones del esquema kasa_learn_journey
+        // 1. Fetch sections ordered by level
         const { data, error: fetchError } = await supabase
-          .schema('kasa_learn_journey ')
+          .schema('kasa_learn_journey')
           .from('section')
           .select('*')
-          .order('created_at', { ascending: true });
+          .order('level', { ascending: true });
 
         if (fetchError) {
-          console.error("❌ [SectionsPage] Error con esquema kasa_learn_journey:", fetchError.message);
+          console.error("❌ [SectionsPage] Error:", fetchError.message);
 
-          // Fallback al esquema public por si acaso la tabla está ahí
-          console.log("🔄 [SectionsPage] Intentando fallback al esquema public...");
+          // Fallback to public schema
           const { data: publicData, error: publicError } = await supabase
             .from('section')
             .select('*')
-            .order('created_at', { ascending: true });
+            .order('level', { ascending: true });
 
           if (publicError) {
-            console.error("❌ [SectionsPage] Error fatal en esquema public:", publicError.message);
-            throw fetchError; // Lanzamos el error original si ambos fallan
+            throw fetchError;
           }
 
-          console.log("✅ [SectionsPage] Secciones obtenidas del esquema public");
           setSections(publicData || []);
         } else {
-          console.log("✅ [SectionsPage] Secciones obtenidas de kasa_learn_journey");
+          console.log("✅ [SectionsPage] Secciones obtenidas:", data?.length);
           setSections(data || []);
+        }
+
+        // 2. Fetch module counts per section
+        const { data: modulesData } = await supabase
+          .schema('kasa_learn_journey')
+          .from('module')
+          .select('id, section_id');
+
+        if (modulesData) {
+          const countsMap = new Map<string, ModuleCountData>();
+
+          modulesData.forEach((mod: any) => {
+            const existing = countsMap.get(mod.section_id);
+            if (existing) {
+              existing.total += 1;
+            } else {
+              countsMap.set(mod.section_id, {
+                section_id: mod.section_id,
+                total: 1,
+                completed: 0, // mocked for now
+              });
+            }
+          });
+
+          setModuleCounts(countsMap);
         }
       } catch (err: any) {
         setError(err.message);
@@ -82,17 +112,45 @@ function SectionsContent() {
 
     setIsExitingPage(true)
 
-    // Exit sequence
     setTimeout(() => {
       router.push(href)
     }, 800)
+  }
+
+  // Determine status for each section based on order
+  // Mock logic: first section = active, rest = locked
+  // In the future this would check actual user_section_progress
+  const getSectionStatus = (index: number): 'completed' | 'active' | 'locked' => {
+    if (index === 0) return 'active'
+    // Mock: mark first as active, rest locked
+    // Could mark index 0 as completed if user has finished it
+    return 'locked'
+  }
+
+  const getSectionProgress = (sectionId: string): number => {
+    const counts = moduleCounts.get(sectionId)
+    if (!counts || counts.total === 0) return 0
+    // Mock progress: 35% for first section, 0 for rest
+    const section = sections.find(s => s.id === sectionId)
+    if (section && sections.indexOf(section) === 0) return 35
+    return 0
+  }
+
+  const getSectionCompletedModules = (sectionId: string): number => {
+    const section = sections.find(s => s.id === sectionId)
+    if (section && sections.indexOf(section) === 0) {
+      const counts = moduleCounts.get(sectionId)
+      // Mock: 1 completed module for first section
+      return counts ? Math.min(1, counts.total) : 0
+    }
+    return 0
   }
 
   return (
     <div className="flex flex-col min-h-screen lg:flex-row bg-[#0F172A]">
       <MainNav onNavItemClick={handleNavItemClick} />
 
-      <main className="flex-1 p-6 pb-[calc(80px+1.5rem)] w-full lg:p-8 lg:pb-8 lg:max-w-[1000px] lg:mx-auto overflow-hidden">
+      <main className="flex-1 p-6 pb-[calc(80px+1.5rem)] w-full lg:p-8 lg:pb-8 lg:max-w-[720px] lg:mx-auto overflow-hidden">
         <motion.header
           initial={{ y: -50, opacity: 0 }}
           animate={isExitingPage
@@ -112,6 +170,9 @@ function SectionsContent() {
           <h1 className="text-4xl font-extrabold text-white tracking-tight">
             Secciones <span className="text-kasa-primary">Disponibles</span>
           </h1>
+          <p className="text-white/40 text-sm mt-1">
+            Completa cada sección para desbloquear la siguiente
+          </p>
         </motion.header>
 
         <AnimatePresence mode="wait">
@@ -121,17 +182,17 @@ function SectionsContent() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="grid grid-cols-1 md:grid-cols-2 gap-6"
+              className="flex flex-col gap-4"
             >
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="h-[240px] rounded-3xl bg-kasa-card/50 animate-pulse border border-kasa-border" />
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-[180px] rounded-2xl bg-[#141e30]/50 animate-pulse border border-white/[0.06]" />
               ))}
             </motion.div>
           ) : error ? (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="col-span-full py-20 text-center border-2 border-dashed border-red-500/20 rounded-3xl bg-red-500/5"
+              className="py-20 text-center border-2 border-dashed border-red-500/20 rounded-3xl bg-red-500/5"
             >
               <p className="text-red-400 mb-2 font-bold">Error al cargar secciones</p>
               <p className="text-red-400/60 text-sm">{error}</p>
@@ -154,29 +215,49 @@ function SectionsContent() {
                 ? { duration: 0.4, ease: "easeInOut", delay: 0 }
                 : { type: "spring", stiffness: 180, damping: 13, mass: 1, bounce: 0.7, delay: 0.3 }
               }
-              className="grid grid-cols-1 md:grid-cols-2 gap-6"
+              className="flex flex-col gap-4"
             >
               {sections.length === 0 ? (
-                <div className="col-span-full py-20 text-center border-2 border-dashed border-white/10 rounded-3xl">
+                <div className="py-20 text-center border-2 border-dashed border-white/10 rounded-3xl">
                   <p className="text-text-muted">No se encontraron secciones.</p>
                 </div>
               ) : (
-                sections.map((section, index) => (
-                  <motion.div
-                    key={section.id}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{
-                      duration: 0.4,
-                      delay: 0.4 + (index * 0.1),
-                    }}
-                  >
-                    <SectionCard
-                      section={section}
-                      href={`/sections/${section.id}`}
-                    />
-                  </motion.div>
-                ))
+                <>
+                  {/* Vertical connector line behind cards */}
+                  <div className="relative">
+                    <div className="relative z-10 flex flex-col gap-4">
+                      {sections.map((section, index) => {
+                        const sectionStatus = getSectionStatus(index)
+                        const progress = getSectionProgress(section.id)
+                        const counts = moduleCounts.get(section.id)
+                        const totalModules = counts?.total || 0
+                        const completedModules = getSectionCompletedModules(section.id)
+
+                        return (
+                          <motion.div
+                            key={section.id}
+                            initial={{ opacity: 0, x: -30 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{
+                              duration: 0.5,
+                              delay: 0.4 + (index * 0.12),
+                              ease: [0.25, 0.46, 0.45, 0.94]
+                            }}
+                          >
+                            <SectionCard
+                              section={section}
+                              progress={progress}
+                              totalModules={totalModules}
+                              completedModules={completedModules}
+                              status={sectionStatus}
+                              href={`/sections/${section.id}`}
+                            />
+                          </motion.div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </>
               )}
             </motion.div>
           )}

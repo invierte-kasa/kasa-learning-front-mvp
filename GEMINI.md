@@ -111,48 +111,50 @@ The application leverages a relational database hosted on Supabase (PostgreSQL).
 ### Core Schema Structure
 
 #### 1. User & Gamification Profile
-* **`user`**: Extends the default Supabase Auth. Stores gamification state:
-    * `current_level` (Int)
-    * `xp` (Int) - Total experience points.
-    * `streak` (Int) - Current daily streak.
-    * `profile_url` (Text) - Avatar reference.
+* **`user`**: Extends the default Supabase Auth (`user_id` → `auth.users.id`). Stores gamification state:
+    * **Columns**: `id` (uuid, PK), `user_id` (uuid, FK → auth.users.id), `current_level` (int8), `profile_url` (text), `xp` (int8), `streak` (int8), `current_module` (uuid, FK → module.id), `display_name` (text), `created_at` (timestamp), `updated_at` (timestamp).
 
 #### 2. Educational Content Hierarchy
 The content follows a strict parent-child relationship:
+
+```
+section → module → quizz → lesson
+                        → question → (choice | pairs | input_question | cloze)
+```
+
 * **`section`**: Top-level topics (e.g., "Fundamentos").
-    * **Columns**: `id` (uuid, PK), `title` (text), `topic` (text), `created_at` (timestamp), `updated_at` (timestamp).
-    * **RLS Policies**:
-        * `Allow admins to delete sections` (DELETE, authenticated)
-        * `Allow admins to insert sections` (INSERT, authenticated)
-        * `Allow admins to update sections` (UPDATE, authenticated)
-        * `Allow authenticated users to select sections` (SELECT, authenticated)
+    * **Columns**: `id` (uuid, PK), `title` (text), `topic` (text), `created_at` (timestamp), `updated_at` (timestamp), `level` (int8, unique progression order).
     * *Relation:* One-to-Many with Modules.
 * **`module`**: Specific learning units. Contains metadata like `estimated_time` and `xp` reward.
-    * **Columns**: `id` (uuid, PK), `section_id` (uuid, FK), `title` (text), `xp` (int4), `estimated_time_in_minutes` (int4), `module_number` (int4), `created_at` (timestamp), `updated_at` (timestamp).
-    * **RLS Policies**:
-        * `Allow admins to delete modules` (DELETE, authenticated)
-        * `Allow admins to insert modules` (INSERT, authenticated)
-        * `Allow admins to update modules` (UPDATE, authenticated)
-        * `Allow authenticated users to select modules` (SELECT, authenticated)
-    * *Relation:* One-to-Many with Lessons/Quizzes.
-* **`lesson`**: Individual content pieces associated with a module.
-* **`quiz`**: Assessment units linked to modules.
-    * Define `minimum_score` required to pass.
+    * **Columns**: `id` (uuid, PK), `section_id` (uuid, FK → section.id), `title` (text), `xp` (int8), `estimated_time_in_minutes` (int4), `module_number` (int4), `created_at` (timestamp), `updated_at` (timestamp).
+    * *Relation:* One-to-Many with Quizzes.
+* **`quizz`**: Assessment/learning units linked to modules. A module can have multiple quizzes.
+    * **Columns**: `id` (uuid, PK), `module_id` (uuid, FK → module.id), `minimum_score` (numeric), `xp` (int4), `quizz_number` (int4).
+    * *Relation:* One-to-Many with Lessons and Questions.
+* **`lesson`**: Individual content pieces associated with a **quizz** (not directly to module).
+    * **Columns**: `id` (uuid, PK), `text` (text), `level` (text), `quizz_id` (uuid, FK → quizz.id).
+    * *Note:* Lesson has no `xp` field; XP is managed at the quizz level.
 
 #### 3. Assessment Engine
 The quiz system is polymorphic, supporting different question types linked via the `question` table:
-* **`question`**: Base table for all query items.
-* **Specific Types:**
-    * **`pairs`**: Matching logic (left_words / right_words).
-        * *Note:* This table exists but RLS policies are not yet configured.
-    * `input_question`: Text input validation.
-    * `cloze`: Fill-in-the-blank style interaction.
+* **`question`**: Base table. **Columns**: `id` (uuid, PK), `quizz_id` (uuid, FK → quizz.id), `question_type` (text).
+    * The question text is stored in the corresponding sub-table, not in this table.
+* **Specific Types (sub-tables linked via `question_id` FK → question.id):**
+    * **`choice`**: Multiple choice. Columns: `answers` (_text), `correct_answers` (text), `question` (text).
+    * **`pairs`**: Matching logic. Columns: `correct_relations` (jsonb), `left_words` (_text), `right_words` (_text), `question` (text).
+    * **`input_question`**: Free text input. Columns: `correct_answers` (_text), `question` (text).
+    * **`cloze`**: Fill-in-the-blank. Columns: `words` (_text), `correct_words` (_text), `question` (text).
 
 #### 4. Progress Tracking & Analytics
-User activity is tracked at three levels of granularity:
-* **`progress`**: High-level summary of user advancement per section/module.
-* **`user_module_progress`**: Tracks the status of specific modules (e.g., `status`, `xp_earned`, `completed_at`).
-* **`user_lesson_attempt`**: Detailed logs of every quiz attempt.
-    * Stores `score`, `pass` (boolean), and specific `xp_earned` for that attempt.
-* **`user_question_answer`**: Records the exact answer provided by the user for granular analytics (correct vs. user input).
+User activity is tracked at four levels of granularity:
 
+* **`progress`**: High-level summary of user advancement.
+    * **Columns**: `user_id` (uuid), `module_percentage_completed` (numeric), `section_percentage_completed` (numeric), `current_module` (uuid), `current_section` (uuid).
+* **`user_section_progress`**: Tracks per-section progress.
+    * **Columns**: `id` (uuid, PK), `user_id` (uuid), `section_id` (uuid, FK → section.id), `status` (text), `xp_earned` (uuid), `started_at` (timestamp), `completed_at` (timestamp).
+* **`user_module_progress`**: Tracks per-module progress.
+    * **Columns**: `id` (uuid, PK), `user_id` (uuid), `module_id` (uuid, FK → module.id), `status` (text), `xp_earned` (int8), `started_at` (timestamp), `completed_at` (timestamp).
+* **`user_lesson_attempt`**: Detailed logs of every lesson/quiz attempt.
+    * **Columns**: `id` (uuid, PK), `user_id` (uuid), `lesson_id` (uuid, FK → lesson.id), `score` (numeric), `passed` (bool), `xp_earned` (int8), `attempt_number` (int8), `completed_at` (timestamp).
+* **`user_question_answer`**: Records exact answers for granular analytics.
+    * **Columns**: `id` (uuid, PK), `user_id` (uuid), `lesson_attempt_id` (int8, FK → user_lesson_attempt.id), `question_id` (uuid, FK → question.id), `user_answer` (text), `is_correct` (bool), `answered_at` (timestamp).

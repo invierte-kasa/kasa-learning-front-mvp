@@ -42,7 +42,6 @@ const Header = forwardRef<HTMLElement, HeaderProps>(
 
         {/* User actions */}
         <div className="flex items-center gap-4">
-          <BellIcon />
           <Avatar
             src={avatarUrl}
             alt={userName}
