@@ -3,12 +3,13 @@
 import { Suspense, useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter, useParams } from 'next/navigation'
-import { motion } from 'motion/react'
+import { motion } from 'framer-motion'
 import { createClient } from '@/utils/supabase/client'
 import { MainNav } from '@/components/layout/MainNav'
 import { ModuleCard } from '@/components/dashboard/ModuleCard'
 import { ProgressBar } from '@/components/ui/ProgressBar'
 import { Module } from '@/types'
+import { useUser } from '@/context/UserContext'
 
 // Back arrow icon
 const BackIcon = () => (
@@ -34,11 +35,13 @@ interface ModuleData {
 }
 
 function SectionDetailContent() {
+    const { user: appUser, loading: userLoading } = useUser()
     const [sectionData, setSectionData] = useState<SectionData | null>(null)
     const [modules, setModules] = useState<Module[]>([])
     const [loading, setLoading] = useState(true)
     const [shouldAnimate, setShouldAnimate] = useState(false)
     const [isExitingPage, setIsExitingPage] = useState(false)
+    const [progress, setProgress] = useState(0)
     const [error, setError] = useState<string | null>(null)
     const params = useParams()
     const router = useRouter()
@@ -47,14 +50,20 @@ function SectionDetailContent() {
 
     useEffect(() => {
         const fetchData = async () => {
-            if (!sectionId) return
+            if (!sectionId || !appUser || userLoading) return
 
             try {
                 console.log(`🚀 [SectionDetail] GET directo para sección: ${sectionId}`)
                 setLoading(true)
                 setError(null)
 
-                // 1. Fetch section info directo
+                const internalId = appUser.id
+                if (!internalId) {
+                    // Si no hay ID interno, significa que la creación en UserContext falló (probablemente RLS)
+                    throw new Error("No se pudo obtener tu perfil de aprendizaje. Verifica las políticas de seguridad (RLS).")
+                }
+
+                // 3. Fetch section info
                 const { data: section, error: sectionError } = await supabase
                     .schema('kasa_learn_journey')
                     .from('section')
@@ -62,36 +71,115 @@ function SectionDetailContent() {
                     .eq('id', sectionId)
                     .single()
 
-                if (sectionError) {
-                    throw sectionError
-                }
-
+                if (sectionError) throw sectionError
                 setSectionData(section)
 
-                // 2. Fetch modules directo
+                // 3. Inicializar progreso de sección si es la primera vez
+                const { data: sectionProgress } = await supabase
+                    .schema('kasa_learn_journey')
+                    .from('user_section_progress')
+                    .select('*')
+                    .eq('user_id', internalId)
+                    .eq('section_id', sectionId)
+                    .maybeSingle()
+
+                if (!sectionProgress) {
+                    console.log("🏁 [SectionDetail] Inicializando progreso de sección")
+                    // Primera vez entrando a esta sección
+                    await supabase
+                        .schema('kasa_learn_journey')
+                        .from('user_section_progress')
+                        .insert({
+                            user_id: internalId,
+                            section_id: sectionId,
+                            status: 'in_progress'
+                        })
+
+                    // También actualizar/inicializar la tabla progress global
+                    const { error: upsertError } = await supabase
+                        .schema('kasa_learn_journey')
+                        .from('progress')
+                        .upsert({
+                            user_id: internalId,
+                            current_section: sectionId,
+                            section_percentage_completion: 0
+                        }, { onConflict: 'user_id' })
+
+                    if (upsertError) console.error("❌ [SectionDetail] Error en upsert progress:", upsertError.message)
+                }
+
+                // 4. Fetch modules with their quizzes and user progress
                 const { data: modulesData, error: modulesError } = await supabase
                     .schema('kasa_learn_journey')
                     .from('module')
-                    .select('*')
-                    .eq('section_id', section.id)
+                    .select('*, quizz(id, quizz_number)')
+                    .eq('section_id', sectionId)
                     .order('module_number', { ascending: true })
 
-                if (modulesError) {
-                    throw modulesError
-                }
+                if (modulesError) throw modulesError
 
-                console.log(`✅ [SectionDetail] ${modulesData?.length || 0} módulos obtenidos`)
+                const { data: userModuleProgress } = await supabase
+                    .schema('kasa_learn_journey')
+                    .from('user_module_progress')
+                    .select('module_id, status')
+                    .eq('user_id', internalId)
 
-                const transformedModules: Module[] = (modulesData || []).map((mod: ModuleData, index: number) => ({
-                    id: mod.id,
-                    number: mod.module_number,
-                    title: mod.title,
-                    status: index === 0 ? 'active' : 'locked' as any,
-                    duration: mod.estimated_time_in_minutes,
-                    xp: mod.xp,
-                }))
+                const completedModules = new Set(
+                    (userModuleProgress || [])
+                        .filter(p => p.status === 'completed')
+                        .map(p => p.module_id)
+                )
+
+                // Determinar cuál es el módulo "activo" actualmente según la tabla progress
+                const { data: globalProgress } = await supabase
+                    .schema('kasa_learn_journey')
+                    .from('progress')
+                    .select('current_module')
+                    .eq('user_id', internalId)
+                    .maybeSingle()
+
+                const transformedModules: Module[] = (modulesData || []).map((mod: any, index: number) => {
+                    let quizArray = Array.isArray(mod.quizz) ? mod.quizz : (mod.quizz ? [mod.quizz] : []);
+                    const sortedQuizzes = [...quizArray].sort((a: any, b: any) => (a.quizz_number || 0) - (b.quizz_number || 0))
+                    const firstQuizzId = sortedQuizzes.length > 0 ? sortedQuizzes[0].id : null
+
+                    // Un módulo es 'active' si:
+                    // 1. Es el current_module en la tabla progress
+                    // 2. Es el primer módulo y no hay current_module definido
+                    // 3. El anterior está completado (este check ya nos da la secuencialidad)
+                    let status: 'completed' | 'active' | 'locked' = 'locked'
+
+                    if (completedModules.has(mod.id)) {
+                        status = 'completed'
+                    } else if (globalProgress?.current_module === mod.id) {
+                        status = 'active'
+                    } else if (index === 0 && !globalProgress?.current_module) {
+                        status = 'active'
+                    } else if (index > 0 && completedModules.has(modulesData[index - 1].id)) {
+                        // Si el anterior está completado, este es el siguiente a jugar (activo)
+                        status = 'active'
+                    }
+
+                    return {
+                        id: mod.id,
+                        number: mod.module_number,
+                        title: mod.title,
+                        status: status,
+                        duration: mod.estimated_time_in_minutes,
+                        xp: mod.xp,
+                        firstQuizzId: firstQuizzId
+                    }
+                })
 
                 setModules(transformedModules)
+
+                // Calcular progreso real de la sección
+                if (modulesData && modulesData.length > 0) {
+                    const completedCount = transformedModules.filter(m => m.status === 'completed').length
+                    const perc = Math.round((completedCount / modulesData.length) * 100)
+                    setProgress(perc)
+                }
+
             } catch (err: any) {
                 console.error('💥 [SectionDetail] Error:', err.message)
                 setError(err.message)
@@ -117,11 +205,10 @@ function SectionDetailContent() {
     }
 
     const totalXp = modules.reduce((sum, mod) => sum + mod.xp, 0)
-    const progress = 50
 
     if (error) {
         return (
-            <div className="flex flex-col min-h-screen lg:flex-row bg-[#0F172A]">
+            <div className="flex flex-col min-h-screen lg:flex-row bg-[#101a28]">
                 <MainNav onNavItemClick={handleNavItemClick} />
                 <main className="flex-1 p-6 flex flex-col items-center justify-center text-center">
                     <div className="bg-red-500/10 border border-red-500/20 p-8 rounded-3xl">
@@ -136,10 +223,10 @@ function SectionDetailContent() {
     }
 
     return (
-        <div className="flex flex-col min-h-screen lg:flex-row bg-[#0F172A]">
+        <div className="flex flex-col min-h-screen lg:flex-row bg-transparent">
             <MainNav onNavItemClick={handleNavItemClick} />
 
-            <main className="flex-1 p-6 pb-[calc(80px+1.5rem)] w-full lg:p-8 lg:pb-8 lg:max-w-[800px] lg:mx-auto overflow-hidden">
+            <main className="flex-1 p-6 pb-[calc(80px+1.5rem)] w-full lg:p-8 lg:pb-8 lg:max-w-[800px] lg:mx-auto overflow-hidden relative">
                 <motion.header
                     initial={{ y: -50, opacity: 0 }}
                     animate={isExitingPage
@@ -214,7 +301,7 @@ function SectionDetailContent() {
                                 >
                                     <ModuleCard
                                         module={module}
-                                        href={module.status === 'active' ? `/lesson/${module.id}` : undefined}
+                                        href={module.status === 'active' ? `/lesson/${(module as any).firstQuizzId || module.id}` : undefined}
                                     />
                                 </motion.div>
                             ))
@@ -228,7 +315,7 @@ function SectionDetailContent() {
 
 export default function SectionDetailPage() {
     return (
-        <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-[#0F172A] text-white">Cargando...</div>}>
+        <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-[#101a28] text-white">Cargando...</div>}>
             <SectionDetailContent />
         </Suspense>
     )

@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { MainNav } from '@/components/layout/MainNav'
 import { Podium, LeaderboardCard, UserStatusBar } from '@/components/ranking'
-import { RankingUser, RankingTab } from '@/types'
+import { RankingUser, RankingTab, UserStats } from '@/types'
 import { cn } from '@/lib/utils'
 import { motion } from 'motion/react'
 import { useRouter } from 'next/navigation'
@@ -76,10 +76,10 @@ export default function RankingPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen lg:flex-row">
+    <div className="flex flex-col min-h-screen lg:flex-row bg-transparent">
       <MainNav onNavItemClick={handleNavItemClick} />
 
-      <main className="flex-1 p-6 pb-[calc(80px+140px)] w-full lg:p-12 lg:pb-12 lg:max-w-[900px] lg:mx-auto">
+      <main className="flex-1 p-6 pb-[calc(80px+140px)] w-full lg:p-12 lg:pb-12 lg:max-w-[900px] lg:mx-auto relative">
         {/* Header + Filter Tabs - Tercero en entrar (delay 1s) desde arriba, Primero en salir (delay 0s) hacia arriba */}
         <motion.div
           initial={{ y: '-100%', opacity: 0 }}

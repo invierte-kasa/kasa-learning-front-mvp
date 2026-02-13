@@ -17,3 +17,4 @@ export { SectionCard } from './SectionCard'
 
 export { SyncScreen } from './SyncScreen'
 export { DashboardContent } from './DashboardContent'
+export { BackgroundParticles } from './BackgroundParticles'

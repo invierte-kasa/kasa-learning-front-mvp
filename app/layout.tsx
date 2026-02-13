@@ -20,6 +20,7 @@ export const metadata: Metadata = {
 }
 
 import { UserProvider } from '@/context/UserContext'
+import { BackgroundParticles } from '@/components/dashboard'
 
 export default function RootLayout({
   children,
@@ -28,9 +29,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es" className={`dark ${inter.variable} ${montserrat.variable}`}>
-      <body className=" text-white min-h-screen font-sans antialiased relative">
+      <body className="text-white min-h-screen font-sans antialiased relative bg-[#101a28]">
+        <BackgroundParticles />
         <UserProvider>
-          {children}
+          <div className="relative z-10">
+            {children}
+          </div>
         </UserProvider>
       </body>
     </html>

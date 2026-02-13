@@ -95,6 +95,12 @@ Implement smooth, engaging animations and transitions inspired by Duolingo:
 - Keep animations under 60fps (use DevTools to verify)
 - Test on mobile devices for smooth performance
 
+## Page Layout & Background
+To maintain visual consistency and a premium feel, all pages must include the `BackgroundParticles` effect:
+- **Implementation**: The `<BackgroundParticles />` component should be placed inside the main content container (usually the `<main>` tag).
+- **Z-Indexing**: The main container should have `relative` positioning. The particle component should be placed at the top of the container, while the actual page content should be wrapped in a `div` with `relative z-10` to ensure it stays above the particles.
+- **Background Color**: Use `#101a28` for the main content background color.
+
 ### Duolingo-Specific Details:
 - Smooth floating animations for achievement popups
 - Quick bounce on level completion
@@ -154,7 +160,7 @@ User activity is tracked at four levels of granularity:
     * **Columns**: `id` (uuid, PK), `user_id` (uuid), `section_id` (uuid, FK → section.id), `status` (text), `xp_earned` (uuid), `started_at` (timestamp), `completed_at` (timestamp).
 * **`user_module_progress`**: Tracks per-module progress.
     * **Columns**: `id` (uuid, PK), `user_id` (uuid), `module_id` (uuid, FK → module.id), `status` (text), `xp_earned` (int8), `started_at` (timestamp), `completed_at` (timestamp).
-* **`user_lesson_attempt`**: Detailed logs of every lesson/quiz attempt.
-    * **Columns**: `id` (uuid, PK), `user_id` (uuid), `lesson_id` (uuid, FK → lesson.id), `score` (numeric), `passed` (bool), `xp_earned` (int8), `attempt_number` (int8), `completed_at` (timestamp).
+* **`user_quizz_attempt`**: Detailed logs of every quiz attempt.
+    * **Columns**: `id` (bigint, PK), `user_id` (uuid), `quizz_id` (uuid, FK → lesson.id), `score` (numeric), `passed` (bool), `xp_earned` (integer), `attempt_number` (integer), `completed_at` (timestamp).
 * **`user_question_answer`**: Records exact answers for granular analytics.
-    * **Columns**: `id` (uuid, PK), `user_id` (uuid), `lesson_attempt_id` (int8, FK → user_lesson_attempt.id), `question_id` (uuid, FK → question.id), `user_answer` (text), `is_correct` (bool), `answered_at` (timestamp).
+    * **Columns**: `id` (bigint, PK), `user_id` (uuid), `quizz_attempt_id` (bigint, FK → user_quizz_attempt.id), `question_id` (uuid, FK → question.id), `user_answer` (text), `is_correct` (bool), `answered_at` (timestamp).

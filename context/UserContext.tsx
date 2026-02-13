@@ -13,6 +13,7 @@ import { createClient } from "@/utils/supabase/client";
 
 export interface UserProfile {
     user_id: string;
+    id?: string; // Kasa Learn Journey internal ID
     email: string;
     names_first?: string;
     names_last?: string;
@@ -21,10 +22,15 @@ export interface UserProfile {
     current_level?: number;
     xp?: number;
     streak?: number;
-    profile_url?: string;
     current_module?: string;
+    current_section?: string;
     display_name?: string;
     created_at?: string;
+
+    // Progress stats from 'progress' table
+    module_percentage_completed?: number;
+    section_percentage_completed?: number;
+
     // Stats
     modules_completed?: number;
     total_modules?: number;
@@ -53,117 +59,131 @@ export function UserProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<UserProfile | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    // Refs to control flow and prevent loops
     const isFetching = useRef(false);
-    const lastUserId = useRef<string | null>(null);
+    const lastFetchUserId = useRef<string | null>(null);
+    const lastEventTime = useRef<number>(0);
+    const retryCount = useRef(0);
 
     const fetchProfile = useCallback(async (session: any) => {
-        const userId = session?.user?.id;
-
-        // Prevent redundant fetches
-        if (!userId || isFetching.current || (user && lastUserId.current === userId)) {
-            if (userId && loading) setLoading(false);
+        const authUserId = session?.user?.id;
+        if (!authUserId) {
+            setLoading(false);
             return;
         }
+
+        // Lock to prevent concurrent fetches
+        if (isFetching.current) return;
 
         try {
             isFetching.current = true;
             setError(null);
-            lastUserId.current = userId;
 
-            console.log(`📡 [UserContext] Intentando obtener perfil para ${userId}...`);
+            console.log(`📡 [UserContext] Iniciando fetch de perfil para ${authUserId}...`);
 
-            // Use Promise.all to fetch everything in parallel and reduce total request time
-            const [publicRes, learnRes, completedRes, totalRes] = await Promise.all([
-                // 1. User profile data - Seleccionamos todo (*) para verificar nombres de columnas
-                supabase
-                    .from("profiles")
-                    .select("*")
-                    .eq("user_id", userId)
-                    .maybeSingle(),
-
-                // 2. Learn journey user data
-                supabase
-                    .schema('kasa_learn_journey')
-                    .from('user')
-                    .select('*')
-                    .eq('user_id', userId)
-                    .maybeSingle(),
-
-                // 3. Modules completed (Count)
-                supabase
-                    .schema('kasa_learn_journey')
-                    .from('user_module_progress')
-                    .select('id', { count: 'exact' })
-                    .eq('user_id', userId)
-                    .eq('status', 'completed'),
-
-                // 4. Total modules (Count)
-                supabase
-                    .schema('kasa_learn_journey')
-                    .from('module')
-                    .select('id', { count: 'exact' })
+            // 1. First stage: Base profiles and Learn journey user + Total modules count
+            // We use maybeSingle to avoid errors if rows don't exist
+            const [publicRes, learnRes, totalRes] = await Promise.all([
+                supabase.from("profiles").select("*").eq("user_id", authUserId).maybeSingle(),
+                supabase.schema('kasa_learn_journey').from('user').select('*').eq('user_id', authUserId).maybeSingle(),
+                supabase.schema('kasa_learn_journey').from('module').select('id', { count: 'exact' })
             ]);
 
-            console.log("🔍 [UserContext] Debug Profiles:", { data: publicRes.data, error: publicRes.error });
-            console.log("🔍 [UserContext] Debug Learn:", { data: learnRes.data, error: learnRes.error });
-
-            if (publicRes.error) {
-                console.warn("⚠️ [UserContext] Perfil (profile schema) no encontrado:", publicRes.error.message);
-            }
-            if (learnRes.error) {
-                console.warn("⚠️ [UserContext] Perfil (kasa_learn_journey) no encontrado:", learnRes.error.message);
+            const learnData = learnRes.data;
+            if (!learnData && !learnRes.error) {
+                console.warn("⚠️ [UserContext] Perfil de aprendizaje no encontrado en DB.");
             }
 
-            // Construir el objeto con valores por defecto para que nunca lleguen undefined a la UI
+            // 2. Second stage: Fetch stats using Internal ID
+            let progressData = null;
+            let completedModulesCount = 0;
+
+            if (learnData?.id) {
+                const [progRes, modProgRes] = await Promise.all([
+                    supabase.schema('kasa_learn_journey').from('progress').select('*').eq('user_id', learnData.id).maybeSingle(),
+                    supabase.schema('kasa_learn_journey').from('user_module_progress')
+                        .select('id', { count: 'exact' })
+                        .eq('user_id', learnData.id)
+                        .eq('status', 'completed')
+                ]);
+
+                progressData = progRes.data;
+                completedModulesCount = modProgRes.count || 0;
+            }
+
+            // 3. Consolidate to local state
             const combinedUser: UserProfile = {
-                // Datos base (siempre presentes en la sesión de Supabase Auth)
-                user_id: userId,
+                user_id: authUserId,
+                id: learnData?.id,
                 email: session.user.email || publicRes.data?.email || '',
-
-                // Datos de perfil (Usa url_profile de la tabla profiles como prioridad)
                 names_first: publicRes.data?.names_first || '',
-                url_profile: publicRes.data?.url_profile || learnRes.data?.profile_url || '',
-
-                // Gamificación: Valores por defecto si no existen en la DB
-                current_level: learnRes.data?.current_level || 1,
-                xp: learnRes.data?.xp || 0,
-                streak: learnRes.data?.streak || 0,
-                display_name: publicRes.data?.names_first || learnRes.data?.display_name || '',
-                created_at: learnRes.data?.created_at || new Date().toISOString(),
-
-                // Mezclar datos de la base de datos (sobrescriben los defaults si existen)
-                ...(learnRes.data || {}),
-
-
-                // Estadísticas
-                modules_completed: completedRes.count || 0,
+                names_last: publicRes.data?.names_last || '',
+                url_profile: publicRes.data?.url_profile || '',
+                display_name: publicRes.data?.names_first || learnData?.display_name || 'Estudiante',
+                current_level: learnData?.current_level || 1,
+                xp: learnData?.xp || 0,
+                streak: learnData?.streak || 0,
+                created_at: learnData?.created_at || new Date().toISOString(),
+                current_module: progressData?.current_module || learnData?.current_module || undefined,
+                current_section: progressData?.current_section || undefined,
+                module_percentage_completed: Number(progressData?.module_percentage_completed) || 0,
+                section_percentage_completed: Number(progressData?.section_percentage_completed) || 0,
+                modules_completed: completedModulesCount,
                 total_modules: totalRes.count || 0
             };
 
-            console.log("✅ [UserContext] Perfil cargado exitosamente:", combinedUser);
+            console.log("✅ [UserContext] Perfil cargado:", combinedUser);
             setUser(combinedUser);
+            lastFetchUserId.current = authUserId;
+            retryCount.current = 0;
         } catch (err: any) {
-            console.error("❌ [UserContext] Error en fetchProfile:", err.message);
+            console.error("❌ [UserContext] Error cargando perfil:", err.message);
+            // Si hay error de rate limit, aumentamos cooldown
+            if (err.message.includes('429')) {
+                lastEventTime.current = Date.now() + 5000; // Bloquea por 5 extra segundos
+            }
         } finally {
             setLoading(false);
             isFetching.current = false;
         }
-    }, [user, loading]);
+    }, []);
 
     useEffect(() => {
         let mounted = true;
 
-        // No individual initAuth needed, onAuthStateChange fires with initial session
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-            console.log("🔔 [UserContext] Auth Event:", event);
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
             if (!mounted) return;
 
-            if (session) {
-                fetchProfile(session);
-            } else {
-                setUser(null);
-                lastUserId.current = null;
+            const now = Date.now();
+
+            // 1. Cooldown Protection
+            if (now < lastEventTime.current) {
+                return;
+            }
+
+            // 2. Event Filtering
+            // Solo nos interesan eventos reales de sesión. 
+            // Ignoramos SIGNED_OUT si session es false y ya estamos en null (evita bucles de error)
+            if (!session) {
+                if (user) {
+                    console.log(`🔔 [UserContext] Limpiando sesión (Event: ${event})`);
+                    setUser(null);
+                }
+                // No limpiamos lastFetchUserId.current aquí para evitar bucles de refresh infinito
                 setLoading(false);
+                return;
+            }
+
+            // 3. Logic: Only fetch if the user ID changed or it's a critical entry event
+            const sessionUserId = session.user.id;
+            const isNewUser = lastFetchUserId.current !== sessionUserId;
+            const isEntryEvent = event === 'SIGNED_IN' || event === 'INITIAL_SESSION';
+
+            if (isNewUser || (isEntryEvent && !user)) {
+                console.log(`🔔 [UserContext] Evento Auth: ${event} | Cargando datos...`);
+                lastEventTime.current = now + 1000; // Throttling
+                fetchProfile(session);
             }
         });
 

@@ -40,7 +40,7 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col min-h-screen lg:flex-row bg-[#0F172A]">
+      <div className="flex flex-col min-h-screen lg:flex-row bg-[#101a28]">
         <MainNav />
         <main className="flex-1 flex items-center justify-center">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-kasa-primary"></div>
@@ -51,7 +51,7 @@ export default function ProfilePage() {
 
   if (!user) {
     return (
-      <div className="flex flex-col min-h-screen lg:flex-row bg-[#0F172A]">
+      <div className="flex flex-col min-h-screen lg:flex-row bg-[#101a28]">
         <MainNav />
         <main className="flex-1 flex items-center justify-center">
           <p className="text-white">No se pudo cargar la información del usuario.</p>
@@ -94,10 +94,10 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen lg:flex-row bg-[#0F172A]">
+    <div className="flex flex-col min-h-screen lg:flex-row bg-transparent">
       <MainNav />
 
-      <main className="flex-1 p-6 pb-[calc(80px+1.5rem)] w-full lg:p-12 lg:pb-12 lg:max-w-[900px] lg:mx-auto">
+      <main className="flex-1 p-6 pb-[calc(80px+1.5rem)] w-full lg:p-12 lg:pb-12 lg:max-w-[900px] lg:mx-auto relative">
         <header className="flex justify-between items-center mb-10">
           <div className="w-10 h-10 flex items-center justify-center text-white cursor-pointer">
             <SettingsIcon />

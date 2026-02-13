@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils'
 import { UserStats } from '@/types'
 import { useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
-import { motion } from 'motion/react'
+import { motion } from 'framer-motion'
 import { createClient } from '@/utils/supabase/client'
 import { useUser } from '@/context/UserContext'
 
@@ -52,70 +52,82 @@ export function DashboardContent({ showDashboard, userName, userStats, avatarUrl
 
     // Fetch de datos reales del dashboard
     useEffect(() => {
-        if (!user?.user_id) return
+        if (!user?.id) return
 
         const fetchDashboardData = async () => {
             try {
-                // 1. Obtener el progreso de módulos del usuario
-                const { data: userProgress } = await supabase
+                // 1. Consultar la tabla progress para la progresión actual del usuario
+                const { data: userProgress, error: progressError } = await supabase
                     .schema('kasa_learn_journey')
-                    .from('user_module_progress')
-                    .select('module_id, status, xp_earned')
-                    .eq('user_id', user.user_id)
+                    .from('progress')
+                    .select('current_module, current_section, module_percentage_completion')
+                    .eq('user_id', user.id)
+                    .maybeSingle()
 
-                const completedModuleIds = new Set(
-                    (userProgress || [])
-                        .filter((p: any) => p.status === 'completed')
-                        .map((p: any) => p.module_id)
-                )
+                let moduleId: string | null = null
+                let sectionId: string | null = null
 
-                // 2. Obtener todos los módulos con su sección
-                const { data: allModules } = await supabase
-                    .schema('kasa_learn_journey')
-                    .from('module')
-                    .select('id, title, module_number, section_id, xp')
-                    .order('module_number', { ascending: true })
+                if (userProgress) {
+                    moduleId = userProgress.current_module
+                    sectionId = userProgress.current_section
+                    setModuleProgress(Number(userProgress.module_percentage_completion) || 0)
+                }
 
-                if (allModules && allModules.length > 0) {
-                    // Encontrar el primer módulo no completado (el módulo activo)
-                    const nextModule = allModules.find(
-                        (m: any) => !completedModuleIds.has(m.id)
-                    )
-
-                    if (nextModule) {
-                        setActiveModule(nextModule)
-                        // Calcular progreso: módulos completados / total módulos * 100
-                        const totalModules = allModules.length
-                        const completedCount = completedModuleIds.size
-                        setModuleProgress(
-                            totalModules > 0 ? Math.round((completedCount / totalModules) * 100) : 0
-                        )
-                    }
-
-                    // 3. Obtener secciones para los módulos bloqueados
-                    const { data: sections } = await supabase
+                // Si no hay progreso o faltan datos, buscamos el primer módulo de la primera sección
+                if (!moduleId || !sectionId) {
+                    const { data: firstSection } = await supabase
                         .schema('kasa_learn_journey')
                         .from('section')
-                        .select('id, title')
+                        .select('id')
+                        .order('level', { ascending: true })
+                        .limit(1)
+                        .maybeSingle()
 
-                    // Crear items bloqueados con las secciones que tienen módulos no completados
-                    if (sections && sections.length > 0) {
-                        const sectionMap = new Map(sections.map((s: any) => [s.id, s.title]))
+                    if (firstSection) {
+                        sectionId = firstSection.id
+                        const { data: firstModule } = await supabase
+                            .schema('kasa_learn_journey')
+                            .from('module')
+                            .select('id')
+                            .eq('section_id', sectionId)
+                            .order('module_number', { ascending: true })
+                            .limit(1)
+                            .maybeSingle()
 
-                        // Obtener secciones con módulos bloqueados (los siguientes al módulo activo)
-                        const activeModuleIndex = allModules.findIndex(
-                            (m: any) => !completedModuleIds.has(m.id)
-                        )
+                        if (firstModule) {
+                            moduleId = firstModule.id
+                        }
+                    }
+                }
 
-                        // Los módulos después del activo son los "bloqueados"
-                        const futureModules = allModules.slice(activeModuleIndex + 1)
-                        const futureSectionIds = [...new Set(futureModules.map((m: any) => m.section_id))]
+                if (moduleId && sectionId) {
+                    // Obtener detalles del módulo activo
+                    const { data: moduleData } = await supabase
+                        .schema('kasa_learn_journey')
+                        .from('module')
+                        .select('id, title, module_number, section_id')
+                        .eq('id', moduleId)
+                        .maybeSingle()
 
-                        const locked: LockedSectionData[] = futureSectionIds
-                            .slice(0, 3) // Máximo 3 items bloqueados
-                            .map((sectionId, index) => ({
-                                title: sectionMap.get(sectionId) || 'Sección Avanzada',
-                                subtitle: `Bloqueado - Completa módulos previos`,
+                    if (moduleData) {
+                        setActiveModule(moduleData)
+                    }
+
+                    // Obtener todos los módulos de la SECCIÓN ACTUAL para mostrar los bloqueados
+                    const { data: sectionModules } = await supabase
+                        .schema('kasa_learn_journey')
+                        .from('module')
+                        .select('id, title, module_number')
+                        .eq('section_id', sectionId)
+                        .order('module_number', { ascending: true })
+
+                    if (sectionModules && moduleData) {
+                        // Los módulos bloqueados son los de la misma sección que tienen un número mayor al actual
+                        const locked: LockedSectionData[] = sectionModules
+                            .filter(m => m.module_number > moduleData.module_number)
+                            .map((m, index) => ({
+                                title: m.title,
+                                subtitle: 'Módulo bloqueado',
                                 icon: index % 2 === 0 ? 'chart' as const : 'credit-card' as const,
                                 href: '/sections',
                             }))
@@ -186,7 +198,7 @@ export function DashboardContent({ showDashboard, userName, userStats, avatarUrl
             )}
 
             <div className={cn(
-                "bg-[#101a28] flex flex-col min-h-screen lg:flex-row overflow-hidden",
+                "bg-transparent flex flex-col min-h-screen lg:flex-row overflow-hidden",
                 !showDashboard ? "hidden" : "flex"
             )}>
                 {/* Desktop Sidebar */}
@@ -209,7 +221,7 @@ export function DashboardContent({ showDashboard, userName, userStats, avatarUrl
                 )}
 
                 <main className={cn(
-                    "flex-1 bg-[#101a28] text-slate-50 flex flex-col",
+                    "flex-1 bg-transparent text-slate-50 flex flex-col",
                     "lg:rounded-tl-[40px]",
                     "relative"
                 )}>
@@ -232,54 +244,50 @@ export function DashboardContent({ showDashboard, userName, userStats, avatarUrl
                                 <Header userName={userName} userAvatar={avatarUrl} />
                             </motion.div>
 
-                            {/* Stats & Welcome con entrada estilo "Salto desde abajo" */}
-                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                                <motion.div
-                                    className="lg:col-span-8"
-                                    initial={{ y: '100%', opacity: 0 }}
-                                    animate={isExitingPage
-                                        ? { y: -100, opacity: 0 }
-                                        : (contentVisible ? { y: 0, opacity: 1 } : { y: '100%', opacity: 0 })
-                                    }
-                                    transition={{
-                                        type: "spring",
-                                        stiffness: 180,
-                                        damping: 13,
-                                        mass: 1,
-                                        bounce: 0.6,
-                                        delay: isExitingPage ? 0.6 : 0.1
-                                    }}
-                                >
-                                    <WelcomeSection
-                                        userName={userName}
-                                        weeklyProgress={userStats.weeklyProgress}
-                                    />
-                                </motion.div>
+                            {/* Welcome Section */}
+                            <motion.div
+                                initial={{ y: '100%', opacity: 0 }}
+                                animate={isExitingPage
+                                    ? { y: -100, opacity: 0 }
+                                    : (contentVisible ? { y: 0, opacity: 1 } : { y: '100%', opacity: 0 })
+                                }
+                                transition={{
+                                    type: "spring",
+                                    stiffness: 180,
+                                    damping: 13,
+                                    mass: 1,
+                                    bounce: 0.6,
+                                    delay: isExitingPage ? 0.6 : 0.1
+                                }}
+                            >
+                                <WelcomeSection
+                                    userName={userName}
+                                    weeklyProgress={userStats.weeklyProgress}
+                                />
+                            </motion.div>
 
-                                <motion.div
-                                    className="lg:col-span-4"
-                                    initial={{ y: '100%', opacity: 0 }}
-                                    animate={isExitingPage
-                                        ? { y: -100, opacity: 0 }
-                                        : (contentVisible ? { y: 0, opacity: 1 } : { y: '100%', opacity: 0 })
-                                    }
-                                    transition={{
-                                        type: "spring",
-                                        stiffness: 180,
-                                        damping: 13,
-                                        mass: 1,
-                                        bounce: 0.6,
-                                        delay: isExitingPage ? 0.6 : 0.2
-                                    }}
-                                >
-                                    <StatsGrid stats={userStats} />
-                                </motion.div>
-                            </div>
+                            {/* Stats Grid */}
+                            <motion.div
+                                initial={{ y: '100%', opacity: 0 }}
+                                animate={isExitingPage
+                                    ? { y: -100, opacity: 0 }
+                                    : (contentVisible ? { y: 0, opacity: 1 } : { y: '100%', opacity: 0 })
+                                }
+                                transition={{
+                                    type: "spring",
+                                    stiffness: 180,
+                                    damping: 13,
+                                    mass: 1,
+                                    bounce: 0.6,
+                                    delay: isExitingPage ? 0.6 : 0.2
+                                }}
+                            >
+                                <StatsGrid stats={userStats} />
+                            </motion.div>
 
                             {/* Learning Roadmap Area */}
-                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                            <div className="grid grid-cols-1 lg:grid-cols-[repeat(auto-fit,minmax(400px,1fr))] gap-8 items-start lg:gap-8">
                                 <motion.div
-                                    className="lg:col-span-8"
                                     initial={{ y: '100%', opacity: 0 }}
                                     animate={isExitingPage
                                         ? { y: '100%', opacity: 0 }
@@ -318,7 +326,6 @@ export function DashboardContent({ showDashboard, userName, userStats, avatarUrl
                                 </motion.div>
 
                                 <motion.div
-                                    className="lg:col-span-4"
                                     initial={{ y: '100%', opacity: 0 }}
                                     animate={isExitingPage
                                         ? { y: '100%', opacity: 0 }

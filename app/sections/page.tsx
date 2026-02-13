@@ -4,6 +4,7 @@ import { Suspense, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { createClient } from '@/utils/supabase/client'
+import { useUser } from '@/context/UserContext'
 import { MainNav } from '@/components/layout/MainNav'
 import { SectionCard } from '@/components/dashboard/SectionCard'
 
@@ -37,39 +38,31 @@ function SectionsContent() {
   const [error, setError] = useState<string | null>(null)
   const [shouldAnimate, setShouldAnimate] = useState(false)
   const [isExitingPage, setIsExitingPage] = useState(false)
+  const { user: appUser, loading: userLoading } = useUser()
   const router = useRouter()
+
+  const [userProgress, setUserProgress] = useState<any[]>([])
+  const [globalProgress, setGlobalProgress] = useState<any>(null)
 
   useEffect(() => {
     const loadData = async () => {
+      if (!appUser || userLoading) return
+
       try {
         console.log("🚀 [SectionsPage] Intentando obtener secciones...");
         setIsLoading(true);
 
+        const internalId = appUser.id
+        if (!internalId) return
         // 1. Fetch sections ordered by level
-        const { data, error: fetchError } = await supabase
+        const { data: sectionsData, error: fetchError } = await supabase
           .schema('kasa_learn_journey')
           .from('section')
           .select('*')
           .order('level', { ascending: true });
 
-        if (fetchError) {
-          console.error("❌ [SectionsPage] Error:", fetchError.message);
-
-          // Fallback to public schema
-          const { data: publicData, error: publicError } = await supabase
-            .from('section')
-            .select('*')
-            .order('level', { ascending: true });
-
-          if (publicError) {
-            throw fetchError;
-          }
-
-          setSections(publicData || []);
-        } else {
-          console.log("✅ [SectionsPage] Secciones obtenidas:", data?.length);
-          setSections(data || []);
-        }
+        if (fetchError) throw fetchError
+        setSections(sectionsData || []);
 
         // 2. Fetch module counts per section
         const { data: modulesData } = await supabase
@@ -79,22 +72,52 @@ function SectionsContent() {
 
         if (modulesData) {
           const countsMap = new Map<string, ModuleCountData>();
-
           modulesData.forEach((mod: any) => {
             const existing = countsMap.get(mod.section_id);
-            if (existing) {
-              existing.total += 1;
-            } else {
-              countsMap.set(mod.section_id, {
-                section_id: mod.section_id,
-                total: 1,
-                completed: 0, // mocked for now
-              });
-            }
+            if (existing) existing.total += 1;
+            else countsMap.set(mod.section_id, { section_id: mod.section_id, total: 1, completed: 0 });
           });
-
           setModuleCounts(countsMap);
         }
+
+        // 3. Fetch user progress
+        const { data: secProgress } = await supabase
+          .schema('kasa_learn_journey')
+          .from('user_section_progress')
+          .select('*')
+          .eq('user_id', internalId)
+
+        setUserProgress(secProgress || [])
+
+        const { data: gProgress } = await supabase
+          .schema('kasa_learn_journey')
+          .from('progress')
+          .select('*')
+          .eq('user_id', internalId)
+          .maybeSingle()
+
+        setGlobalProgress(gProgress)
+
+        // Count completed modules per section
+        const { data: modProgress } = await supabase
+          .schema('kasa_learn_journey')
+          .from('user_module_progress')
+          .select('module_id, module:module_id(section_id)')
+          .eq('user_id', internalId)
+          .eq('status', 'completed')
+
+        if (modProgress) {
+          setModuleCounts(prev => {
+            const newMap = new Map(prev)
+            modProgress.forEach((p: any) => {
+              const sectionId = p.module?.section_id
+              const existing = newMap.get(sectionId)
+              if (existing) existing.completed += 1
+            })
+            return newMap
+          })
+        }
+
       } catch (err: any) {
         setError(err.message);
       } finally {
@@ -109,48 +132,45 @@ function SectionsContent() {
   const handleNavItemClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     e.preventDefault()
     if (isExitingPage) return
-
     setIsExitingPage(true)
-
-    setTimeout(() => {
-      router.push(href)
-    }, 800)
+    setTimeout(() => { router.push(href) }, 800)
   }
 
-  // Determine status for each section based on order
-  // Mock logic: first section = active, rest = locked
-  // In the future this would check actual user_section_progress
-  const getSectionStatus = (index: number): 'completed' | 'active' | 'locked' => {
-    if (index === 0) return 'active'
-    // Mock: mark first as active, rest locked
-    // Could mark index 0 as completed if user has finished it
+  const getSectionStatus = (index: number, sectionId: string): 'completed' | 'active' | 'locked' => {
+    const progress = userProgress.find(p => p.section_id === sectionId)
+    if (progress?.status === 'completed') return 'completed'
+
+    // Si es la sección actual en la tabla progress
+    if (globalProgress?.current_section === sectionId) return 'active'
+
+    // Si es la primera sección y no hay progreso global
+    if (index === 0 && !globalProgress?.current_section) return 'active'
+
+    // Si la anterior está completada
+    if (index > 0) {
+      const prevSection = sections[index - 1]
+      const prevProgress = userProgress.find(p => p.section_id === prevSection.id)
+      if (prevProgress?.status === 'completed') return 'active'
+    }
+
     return 'locked'
   }
 
   const getSectionProgress = (sectionId: string): number => {
     const counts = moduleCounts.get(sectionId)
     if (!counts || counts.total === 0) return 0
-    // Mock progress: 35% for first section, 0 for rest
-    const section = sections.find(s => s.id === sectionId)
-    if (section && sections.indexOf(section) === 0) return 35
-    return 0
+    return Math.round((counts.completed / counts.total) * 100)
   }
 
   const getSectionCompletedModules = (sectionId: string): number => {
-    const section = sections.find(s => s.id === sectionId)
-    if (section && sections.indexOf(section) === 0) {
-      const counts = moduleCounts.get(sectionId)
-      // Mock: 1 completed module for first section
-      return counts ? Math.min(1, counts.total) : 0
-    }
-    return 0
+    return moduleCounts.get(sectionId)?.completed || 0
   }
 
   return (
-    <div className="flex flex-col min-h-screen lg:flex-row bg-[#0F172A]">
+    <div className="flex flex-col min-h-screen lg:flex-row bg-transparent">
       <MainNav onNavItemClick={handleNavItemClick} />
 
-      <main className="flex-1 p-6 pb-[calc(80px+1.5rem)] w-full lg:p-8 lg:pb-8 lg:max-w-[720px] lg:mx-auto overflow-hidden">
+      <main className="flex-1 p-6 pb-[calc(80px+1.5rem)] w-full lg:p-8 lg:pb-8 lg:max-w-[720px] lg:mx-auto overflow-hidden relative">
         <motion.header
           initial={{ y: -50, opacity: 0 }}
           animate={isExitingPage
@@ -227,7 +247,7 @@ function SectionsContent() {
                   <div className="relative">
                     <div className="relative z-10 flex flex-col gap-4">
                       {sections.map((section, index) => {
-                        const sectionStatus = getSectionStatus(index)
+                        const sectionStatus = getSectionStatus(index, section.id)
                         const progress = getSectionProgress(section.id)
                         const counts = moduleCounts.get(section.id)
                         const totalModules = counts?.total || 0
@@ -269,7 +289,7 @@ function SectionsContent() {
 
 export default function SectionsPage() {
   return (
-    <Suspense fallback={<div className="bg-[#0F172A] min-h-screen" />}>
+    <Suspense fallback={<div className="bg-[#101a28] min-h-screen" />}>
       <SectionsContent />
     </Suspense>
   )
