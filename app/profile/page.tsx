@@ -61,7 +61,7 @@ export default function ProfilePage() {
   }
 
   const displayName = user.display_name || `${user.names_first || ''} ${user.names_last || ''}`.trim() || user.email
-  const avatarUrl = user.profile_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=10B981&color=fff`
+  const avatarUrl = user.url_profile || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=10B981&color=fff`
   const level = user.current_level || 1
   const xp = user.xp || 0
   const targetXP = (level * 1000)
