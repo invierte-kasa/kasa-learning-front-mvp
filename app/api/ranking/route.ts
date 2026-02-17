@@ -52,5 +52,7 @@ export async function GET(request: NextRequest) {
         }
     })
 
+    console.log('📊 [API/ranking] tab:', tab, '| results:', JSON.stringify(rankings, null, 2))
+
     return NextResponse.json(rankings)
 }
