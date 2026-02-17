@@ -1,12 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { MainNav } from '@/components/layout/MainNav'
 import { Podium, LeaderboardCard, UserStatusBar } from '@/components/ranking'
-import { RankingUser, RankingTab, UserStats } from '@/types'
+import { RankingUser, RankingTab } from '@/types'
 import { cn } from '@/lib/utils'
 import { motion } from 'motion/react'
 import { useRouter } from 'next/navigation'
+import { useUser } from '@/context/UserContext'
 
 // Icons
 const XPIcon = () => (
@@ -22,45 +23,56 @@ const StreakIcon = () => (
   </svg>
 )
 
-// Mock data
-const xpRankings: RankingUser[] = [
-  { id: '1', name: 'Sarah K.', avatar: 'https://ui-avatars.com/api/?name=Sarah+K&background=064E3B&color=F8FAFC', rank: 1, xp: 15400, streak: 24, level: 'Master', title: 'MASTER' },
-  { id: '2', name: 'Michael B.', avatar: 'https://ui-avatars.com/api/?name=Michael+B&background=1E293B&color=94A3B8', rank: 2, xp: 14850, streak: 18, level: 'Pro II', title: 'PRO II' },
-  { id: '3', name: 'Juan R.', avatar: 'https://ui-avatars.com/api/?name=Juan+R&background=1E293B&color=94A3B8', rank: 3, xp: 14600, streak: 12, level: 'Pro I', title: 'PRO I' },
-  { id: '4', name: 'Elena M.', avatar: 'https://ui-avatars.com/api/?name=Elena+M&background=334155&color=F8FAFC', rank: 4, xp: 13200, streak: 15, level: 'Expert', title: 'EXPERT ASSOCIATE' },
-  { id: '5', name: 'David P.', avatar: 'https://ui-avatars.com/api/?name=David+P&background=334155&color=F8FAFC', rank: 5, xp: 12950, streak: 26, level: 'Expert', title: 'BROKER LEVEL 4' },
-  { id: '6', name: 'Lisa W.', avatar: 'https://ui-avatars.com/api/?name=Lisa+W&background=334155&color=F8FAFC', rank: 6, xp: 11400, streak: 9, level: 'Advanced', title: 'HOUSE HUNTER' },
-  { id: '7', name: 'Marcus J.', avatar: 'https://ui-avatars.com/api/?name=Marcus+J&background=334155&color=F8FAFC', rank: 7, xp: 10850, streak: 7, level: 'Advanced', title: 'KNOWLEDGE SEEKER' },
-]
-
-const streakRankings: RankingUser[] = [
-  { id: '8', name: 'Ana L.', avatar: 'https://ui-avatars.com/api/?name=Ana+L&background=064E3B&color=F8FAFC', rank: 1, xp: 8200, streak: 32, level: 'Unstoppable', title: 'UNSTOPPABLE' },
-  { id: '5', name: 'David P.', avatar: 'https://ui-avatars.com/api/?name=David+P&background=1E293B&color=94A3B8', rank: 2, xp: 12950, streak: 26, level: 'Steady', title: 'STEADY' },
-  { id: '1', name: 'Sarah K.', avatar: 'https://ui-avatars.com/api/?name=Sarah+K&background=1E293B&color=94A3B8', rank: 3, xp: 15400, streak: 24, level: 'Relentless', title: 'RELENTLESS' },
-  { id: '2', name: 'Michael B.', avatar: 'https://ui-avatars.com/api/?name=Michael+B&background=334155&color=F8FAFC', rank: 4, xp: 14850, streak: 18, level: 'Consistent', title: 'CONSISTENT' },
-  { id: '4', name: 'Elena M.', avatar: 'https://ui-avatars.com/api/?name=Elena+M&background=334155&color=F8FAFC', rank: 5, xp: 13200, streak: 15, level: 'Regular', title: 'REGULAR' },
-  { id: '3', name: 'Juan R. (You)', avatar: 'https://ui-avatars.com/api/?name=Juan+Rodriguez&background=10B981&color=fff', rank: 6, xp: 14600, streak: 12, level: 'Active', title: 'ACTIVE' },
-]
-
-const currentUser = {
-  name: 'Juan Rodriguez',
-  avatar: 'https://ui-avatars.com/api/?name=Juan+Rodriguez&background=10B981&color=fff',
-  xp: 14600,
-  streak: 12,
-}
-
 export default function RankingPage() {
   const [tab, setTab] = useState<RankingTab>('xp')
   const [isExitingPage, setIsExitingPage] = useState(false)
+  const [rankings, setRankings] = useState<RankingUser[]>([])
+  const [loadingRankings, setLoadingRankings] = useState(true)
   const router = useRouter()
+  const { user } = useUser()
 
-  const rankings = tab === 'xp' ? xpRankings : streakRankings
+  useEffect(() => {
+    async function fetchRankings() {
+      setLoadingRankings(true)
+      try {
+        const res = await fetch(`/api/ranking?tab=${tab}`)
+        if (!res.ok) throw new Error('Failed to fetch rankings')
+        const data: RankingUser[] = await res.json()
+        setRankings(data)
+      } catch (err) {
+        console.error('❌ Error fetching rankings:', err)
+        setRankings([])
+      } finally {
+        setLoadingRankings(false)
+      }
+    }
+
+    fetchRankings()
+  }, [tab])
+
   const podiumUsers = rankings.slice(0, 3)
   const listUsers = rankings.slice(3)
 
-  const statusProps = tab === 'xp'
-    ? { progress: 80, nextRankGap: 250, nextRankName: 'Michael B.' }
-    : { progress: 60, nextRankGap: 3, nextRankName: '5' }
+  // Calculate status props based on the current user's position in rankings
+  const currentUserRank = rankings.findIndex(r => r.user_id === user?.user_id)
+  const userAbove = currentUserRank > 0 ? rankings[currentUserRank - 1] : null
+
+  const statusProps = (() => {
+    if (!userAbove || currentUserRank < 0) {
+      return { progress: 0, nextRankGap: 0, nextRankName: '—' }
+    }
+
+    const currentUserData = rankings[currentUserRank]
+    if (tab === 'xp') {
+      const gap = (userAbove.xp || 0) - (currentUserData.xp || 0)
+      const progress = gap > 0 ? Math.min(Math.round(((currentUserData.xp || 0) / (userAbove.xp || 1)) * 100), 99) : 100
+      return { progress, nextRankGap: gap, nextRankName: userAbove.name }
+    } else {
+      const gap = (userAbove.streak || 0) - (currentUserData.streak || 0)
+      const progress = gap > 0 ? Math.min(Math.round(((currentUserData.streak || 0) / (userAbove.streak || 1)) * 100), 99) : 100
+      return { progress, nextRankGap: gap, nextRankName: userAbove.name }
+    }
+  })()
 
   const handleNavItemClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     e.preventDefault()
@@ -68,8 +80,6 @@ export default function RankingPage() {
 
     setIsExitingPage(true)
 
-    // Secuencia de salida: última animación (Podium) termina en 1.4s (delay 1s + 0.4s duration)
-    // Esperamos 0.3s adicionales = 1.7s total
     setTimeout(() => {
       router.push(href)
     }, 1700)
@@ -80,7 +90,7 @@ export default function RankingPage() {
       <MainNav onNavItemClick={handleNavItemClick} />
 
       <main className="flex-1 p-6 pb-[calc(80px+140px)] w-full lg:p-12 lg:pb-12 lg:max-w-[900px] lg:mx-auto relative">
-        {/* Header + Filter Tabs - Tercero en entrar (delay 1s) desde arriba, Primero en salir (delay 0s) hacia arriba */}
+        {/* Header + Filter Tabs */}
         <motion.div
           initial={{ y: '-100%', opacity: 0 }}
           animate={isExitingPage
@@ -133,85 +143,101 @@ export default function RankingPage() {
           </div>
         </motion.div>
 
-        {/* Podium - Primero en entrar (delay 0s) desde arriba, Tercero en salir (delay 1s) hacia arriba */}
-        <motion.div
-          initial={{ y: '-100%', opacity: 0 }}
-          animate={isExitingPage
-            ? { y: '-100%', opacity: 0 }
-            : { y: 0, opacity: 1 }
-          }
-          transition={isExitingPage
-            ? { duration: 0.4, ease: [0.4, 0, 1, 1], delay: 1 }
-            : {
-              type: "spring",
-              stiffness: 180,
-              damping: 13,
-              mass: 1,
-              bounce: 0.7,
-              delay: 0
-            }
-          }
-        >
-          <Podium users={podiumUsers} tab={tab} />
-        </motion.div>
-
-        {/* Leaderboard list - Segundo en entrar (delay 0.4s) desde arriba, Cuarto en salir (delay 1.4s) hacia arriba */}
-        <motion.div
-          initial={{ y: '-100%', opacity: 0 }}
-          animate={isExitingPage
-            ? { y: '-100%', opacity: 0 }
-            : { y: 0, opacity: 1 }
-          }
-          transition={isExitingPage
-            ? { duration: 0.4, ease: [0.4, 0, 1, 1], delay: 0.6 }
-            : {
-              type: "spring",
-              stiffness: 180,
-              damping: 13,
-              mass: 1,
-              bounce: 0.7,
-              delay: 0.4
-            }
-          }
-        >
-          <span className="block text-xs uppercase tracking-widest text-text-muted font-bold mb-6">
-            {tab === 'xp' ? 'Top 10 Rankings' : 'Consistency Leaders'}
-          </span>
-
-          <div className="flex flex-col gap-3">
-            {listUsers.map((user) => (
-              <LeaderboardCard
-                key={user.id}
-                user={user}
-                tab={tab}
-                isCurrentUser={user.name.includes('You') || user.name === 'Juan R.'}
-              />
-            ))}
+        {loadingRankings ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-4">
+            <div className="w-10 h-10 border-4 border-kasa-primary border-t-transparent rounded-full animate-spin" />
+            <p className="text-text-muted text-sm font-bold">Loading rankings...</p>
           </div>
-        </motion.div>
+        ) : rankings.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-4">
+            <p className="text-text-muted text-lg font-bold">No rankings yet</p>
+            <p className="text-text-muted text-sm">Be the first to earn XP!</p>
+          </div>
+        ) : (
+          <>
+            {/* Podium */}
+            {podiumUsers.length >= 3 && (
+              <motion.div
+                initial={{ y: '-100%', opacity: 0 }}
+                animate={isExitingPage
+                  ? { y: '-100%', opacity: 0 }
+                  : { y: 0, opacity: 1 }
+                }
+                transition={isExitingPage
+                  ? { duration: 0.4, ease: [0.4, 0, 1, 1], delay: 1 }
+                  : {
+                    type: "spring",
+                    stiffness: 180,
+                    damping: 13,
+                    mass: 1,
+                    bounce: 0.7,
+                    delay: 0
+                  }
+                }
+              >
+                <Podium users={podiumUsers} tab={tab} />
+              </motion.div>
+            )}
 
-        {/* User Status Bar - Fade in/out (delay 0.3s entrada, delay 0.5s salida) */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={isExitingPage
-            ? { opacity: 0 }
-            : { opacity: 1 }
-          }
-          transition={{
-            duration: 0.4,
-            ease: "easeInOut",
-            delay: isExitingPage ? 0.7 : 0.3
-          }}
-        >
-          <UserStatusBar
-            name={currentUser.name}
-            avatar={currentUser.avatar}
-            tab={tab}
-            xp={currentUser.xp}
-            streak={currentUser.streak}
-            {...statusProps}
-          />
-        </motion.div>
+            {/* Leaderboard list */}
+            {listUsers.length > 0 && (
+              <motion.div
+                initial={{ y: '-100%', opacity: 0 }}
+                animate={isExitingPage
+                  ? { y: '-100%', opacity: 0 }
+                  : { y: 0, opacity: 1 }
+                }
+                transition={isExitingPage
+                  ? { duration: 0.4, ease: [0.4, 0, 1, 1], delay: 0.6 }
+                  : {
+                    type: "spring",
+                    stiffness: 180,
+                    damping: 13,
+                    mass: 1,
+                    bounce: 0.7,
+                    delay: 0.4
+                  }
+                }
+              >
+                <span className="block text-xs uppercase tracking-widest text-text-muted font-bold mb-6">
+                  {tab === 'xp' ? 'Top 10 Rankings' : 'Consistency Leaders'}
+                </span>
+
+                <div className="flex flex-col gap-3">
+                  {listUsers.map((rankUser) => (
+                    <LeaderboardCard
+                      key={rankUser.id}
+                      user={rankUser}
+                      tab={tab}
+                      isCurrentUser={rankUser.user_id === user?.user_id}
+                    />
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </>
+        )}
+
+        {/* User Status Bar */}
+        {currentUserRank >= 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={isExitingPage
+              ? { opacity: 0 }
+              : { opacity: 1 }
+            }
+            transition={{
+              duration: 0.4,
+              ease: "easeInOut",
+              delay: isExitingPage ? 0.7 : 0.3
+            }}
+          >
+            <UserStatusBar
+              tab={tab}
+              {...statusProps}
+            />
+          </motion.div>
+        )}
       </main>
     </div>
   )

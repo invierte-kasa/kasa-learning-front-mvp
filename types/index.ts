@@ -108,6 +108,7 @@ export interface QuizResult {
 // Ranking types
 export interface RankingUser {
   id: string;
+  user_id?: string;
   name: string;
   avatar: string;
   rank: number;
