@@ -9,46 +9,33 @@ export async function GET(request: NextRequest) {
 
     const orderField = tab === 'xp' ? 'xp' : 'streak'
 
+    // Use the user_public VIEW (bypasses RLS, returns all users)
     const { data, error } = await supabase
         .schema('kasa_learn_journey')
-        .from('user')
-        .select('id, user_id, display_name, xp, streak, current_level')
-        .order(orderField, { ascending: false })
+        .from('user_public')
+        .select('id, display_name, profile_url, xp, streak')
+        .order(orderField, { ascending: false, nullsFirst: false })
         .limit(10)
+
+    console.log('📊 [API/ranking] Raw user_public query:', { tab, orderField, count: data?.length, data, error })
 
     if (error) {
         console.error('❌ [API/ranking] Error fetching rankings:', error)
         return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    // Fetch profile data (names, avatars) for all ranked users
-    const userIds = (data || []).map((u: any) => u.user_id)
-
-    const { data: profiles } = await supabase
-        .from('profiles')
-        .select('user_id, names_first, names_last, url_profile')
-        .in('user_id', userIds)
-
-    const profileMap = new Map(
-        (profiles || []).map((p: any) => [p.user_id, p])
-    )
-
     const rankings = (data || []).map((user: any, index: number) => {
-        const profile = profileMap.get(user.user_id) as any
-        const name = profile?.names_first
-            ? `${profile.names_first}${profile.names_last ? ' ' + profile.names_last.charAt(0) + '.' : ''}`
-            : user.display_name || 'User'
+        const name = user.display_name || 'User'
 
         return {
             id: user.id,
-            user_id: user.user_id,
             name,
-            avatar: profile?.url_profile || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=1E293B&color=94A3B8`,
+            avatar: user.profile_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=1E293B&color=94A3B8`,
             rank: index + 1,
             xp: user.xp || 0,
             streak: user.streak || 0,
-            level: `Lvl ${user.current_level || 1}`,
-            title: `LEVEL ${user.current_level || 1}`,
+            level: `${user.xp || 0} XP`,
+            title: `${user.xp || 0} XP`,
         }
     })
 

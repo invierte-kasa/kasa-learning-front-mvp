@@ -36,8 +36,14 @@ export default function RankingPage() {
       setLoadingRankings(true)
       try {
         const res = await fetch(`/api/ranking?tab=${tab}`)
-        if (!res.ok) throw new Error('Failed to fetch rankings')
+        const contentType = res.headers.get('content-type')
+        if (!contentType?.includes('application/json')) {
+          console.error('❌ /api/ranking returned non-JSON:', res.status, contentType)
+          throw new Error(`API returned ${res.status} with content-type: ${contentType}`)
+        }
+        if (!res.ok) throw new Error(`Failed to fetch rankings: ${res.status}`)
         const data: RankingUser[] = await res.json()
+        console.log('📊 [Ranking Page] Fetched rankings:', data)
         setRankings(data)
       } catch (err) {
         console.error('❌ Error fetching rankings:', err)
@@ -50,11 +56,12 @@ export default function RankingPage() {
     fetchRankings()
   }, [tab])
 
-  const podiumUsers = rankings.slice(0, 3)
-  const listUsers = rankings.slice(3)
+  const hasPodium = rankings.length >= 3
+  const podiumUsers = hasPodium ? rankings.slice(0, 3) : []
+  const listUsers = hasPodium ? rankings.slice(3) : rankings
 
   // Calculate status props based on the current user's position in rankings
-  const currentUserRank = rankings.findIndex(r => r.user_id === user?.user_id)
+  const currentUserRank = rankings.findIndex(r => r.id === user?.id)
   const userAbove = currentUserRank > 0 ? rankings[currentUserRank - 1] : null
 
   const statusProps = (() => {
@@ -156,7 +163,7 @@ export default function RankingPage() {
         ) : (
           <>
             {/* Podium */}
-            {podiumUsers.length >= 3 && (
+            {hasPodium && (
               <motion.div
                 initial={{ y: '-100%', opacity: 0 }}
                 animate={isExitingPage
@@ -209,7 +216,7 @@ export default function RankingPage() {
                       key={rankUser.id}
                       user={rankUser}
                       tab={tab}
-                      isCurrentUser={rankUser.user_id === user?.user_id}
+                      isCurrentUser={rankUser.id === user?.id}
                     />
                   ))}
                 </div>
