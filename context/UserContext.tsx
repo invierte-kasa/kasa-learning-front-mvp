@@ -65,6 +65,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
     const lastFetchUserId = useRef<string | null>(null);
     const lastEventTime = useRef<number>(0);
     const retryCount = useRef(0);
+    const streakUpdatedForSession = useRef(false);
 
     const fetchProfile = useCallback(async (session: any) => {
         const authUserId = session?.user?.id;
@@ -137,6 +138,25 @@ export function UserProvider({ children }: { children: ReactNode }) {
             setUser(combinedUser);
             lastFetchUserId.current = authUserId;
             retryCount.current = 0;
+
+            // Fire-and-forget: actualizar streak una sola vez por sesión
+            if (!streakUpdatedForSession.current) {
+                streakUpdatedForSession.current = true;
+                Promise.resolve(
+                    supabase.schema('kasa_learn_journey').rpc('update_user_streak')
+                ).then(({ data, error: rpcError }) => {
+                    if (rpcError || !data) {
+                        console.warn('🔥 [UserContext] Streak RPC falló (silencioso):', rpcError?.message);
+                        return;
+                    }
+                    console.log(`🔥 [UserContext] Streak actualizado: ${data.streak} (updated: ${data.updated})`);
+                    if (data.streak !== combinedUser.streak) {
+                        setUser(prev => prev ? { ...prev, streak: data.streak } : prev);
+                    }
+                }).catch(() => {
+                    // Silenciar cualquier error — no afectar la UX
+                });
+            }
         } catch (err: any) {
             console.error("❌ [UserContext] Error cargando perfil:", err.message);
             // Si hay error de rate limit, aumentamos cooldown

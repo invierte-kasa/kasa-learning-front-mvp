@@ -61,7 +61,7 @@ export interface ChecklistItem {
 }
 
 // Quiz types
-export type QuestionType = 'choice' | 'cloze' | 'input';
+export type QuestionType = 'choice' | 'cloze' | 'input' | 'pairs';
 
 export interface BaseQuestion {
   id: string;
@@ -88,7 +88,14 @@ export interface InputQuestion extends BaseQuestion {
   correct: string;
 }
 
-export type Question = ChoiceQuestion | ClozeQuestion | InputQuestion;
+export interface PairsQuestion extends BaseQuestion {
+  type: 'pairs';
+  leftWords: string[];
+  rightWords: string[];
+  correctRelations: Record<string, string>;
+}
+
+export type Question = ChoiceQuestion | ClozeQuestion | InputQuestion | PairsQuestion;
 
 export interface Quiz {
   id: string;

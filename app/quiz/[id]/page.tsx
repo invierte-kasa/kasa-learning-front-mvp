@@ -60,9 +60,10 @@ function QuizContent() {
           choice: baseQuestions.filter(q => q.question_type === 'choice').map(q => q.id),
           cloze: baseQuestions.filter(q => q.question_type === 'cloze').map(q => q.id),
           input: baseQuestions.filter(q => q.question_type === 'input' || q.question_type === 'input_question').map(q => q.id),
+          pairs: baseQuestions.filter(q => q.question_type === 'pairs').map(q => q.id),
         }
 
-        const [choicesRes, clozesRes, inputsRes] = await Promise.all([
+        const [choicesRes, clozesRes, inputsRes, pairsRes] = await Promise.all([
           typeGroups.choice.length > 0
             ? supabase.schema('kasa_learn_journey').from('choice').select('*').in('question_id', typeGroups.choice)
             : Promise.resolve({ data: [] }),
@@ -71,6 +72,9 @@ function QuizContent() {
             : Promise.resolve({ data: [] }),
           typeGroups.input.length > 0
             ? supabase.schema('kasa_learn_journey').from('input_question').select('*').in('question_id', typeGroups.input)
+            : Promise.resolve({ data: [] }),
+          typeGroups.pairs.length > 0
+            ? supabase.schema('kasa_learn_journey').from('pairs').select('*').in('question_id', typeGroups.pairs)
             : Promise.resolve({ data: [] })
         ])
 
@@ -118,8 +122,21 @@ function QuizContent() {
           })
         })
 
+        // Process Pairs
+        pairsRes.data?.forEach(data => {
+          const shuffledRight = [...(data.right_words || [])].sort(() => 0.5 - Math.random())
+          detailedQuestions.push({
+            id: data.question_id,
+            type: 'pairs',
+            title: data.question || 'Conecta cada concepto con su definición',
+            leftWords: data.left_words || [],
+            rightWords: shuffledRight,
+            correctRelations: data.correct_relations || {}
+          })
+        })
+
         const shuffled = [...detailedQuestions].sort(() => 0.5 - Math.random())
-        const selectionSize = Math.min(10, Math.max(1, shuffled.length))
+        const selectionSize = Math.min(7, Math.max(1, shuffled.length))
         const selected = shuffled.slice(0, selectionSize)
 
         setQuestions(selected)

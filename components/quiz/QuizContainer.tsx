@@ -1,11 +1,12 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { Question, QuizResult, ChoiceQuestion, ClozeQuestion, InputQuestion } from '@/types'
+import { Question, QuizResult, ChoiceQuestion, ClozeQuestion, InputQuestion, PairsQuestion } from '@/types'
 import { ProgressBar } from '../ui/ProgressBar'
 import { QuestionChoice } from './QuestionChoice'
 import { QuestionCloze } from './QuestionCloze'
 import { QuestionInput } from './QuestionInput'
+import { QuestionPairs } from './QuestionPairs'
 import { FeedbackOverlay } from './FeedbackOverlay'
 import { ResultsScreen } from './ResultsScreen'
 import { normalizeString } from '@/lib/utils'
@@ -39,6 +40,8 @@ export function QuizContainer({ questions, onQuit, quizId, quizMetadata }: QuizC
   const [selectedOption, setSelectedOption] = useState<number | null>(null)
   const [inputValue, setInputValue] = useState('')
   const [filledGaps, setFilledGaps] = useState<(FilledGap | null)[]>([])
+  const [selectedPairs, setSelectedPairs] = useState<Record<string, string>>({})
+  const [selectedLeft, setSelectedLeft] = useState<string | null>(null)
   const [showFeedback, setShowFeedback] = useState(false)
   const [isCorrect, setIsCorrect] = useState(false)
   const [correctCount, setCorrectCount] = useState(0)
@@ -68,10 +71,14 @@ export function QuizContainer({ questions, onQuit, quizId, quizMetadata }: QuizC
         return inputValue.trim().length > 0
       case 'cloze':
         return filledGaps.every((g) => g !== null)
+      case 'pairs': {
+        const q = currentQuestion as PairsQuestion
+        return Object.keys(selectedPairs).length === q.leftWords.length
+      }
       default:
         return false
     }
-  }, [currentQuestion, selectedOption, inputValue, filledGaps])
+  }, [currentQuestion, selectedOption, inputValue, filledGaps, selectedPairs])
 
   // Validate answer
   const checkAnswer = useCallback(() => {
@@ -92,10 +99,16 @@ export function QuizContainer({ questions, onQuit, quizId, quizMetadata }: QuizC
         const q = currentQuestion as ClozeQuestion
         return filledGaps.every((g, i) => g && g.word === q.correct[i])
       }
+      case 'pairs': {
+        const q = currentQuestion as PairsQuestion
+        return Object.entries(selectedPairs).every(
+          ([left, right]) => q.correctRelations[left] === right
+        )
+      }
       default:
         return false
     }
-  }, [currentQuestion, selectedOption, inputValue, filledGaps])
+  }, [currentQuestion, selectedOption, inputValue, filledGaps, selectedPairs])
 
   // Handle check button
   const handleCheck = () => {
@@ -107,6 +120,7 @@ export function QuizContainer({ questions, onQuit, quizId, quizMetadata }: QuizC
     if (currentQuestion.type === 'choice') answerText = (currentQuestion as ChoiceQuestion).options[selectedOption!]
     else if (currentQuestion.type === 'input') answerText = inputValue
     else if (currentQuestion.type === 'cloze') answerText = filledGaps.map(g => g?.word).join(', ')
+    else if (currentQuestion.type === 'pairs') answerText = JSON.stringify(selectedPairs)
 
     setUserAnswers(prev => [...prev, {
       question_id: currentQuestion.id,
@@ -130,6 +144,8 @@ export function QuizContainer({ questions, onQuit, quizId, quizMetadata }: QuizC
       setCurrentIndex(nextIndex)
       setSelectedOption(null)
       setInputValue('')
+      setSelectedPairs({})
+      setSelectedLeft(null)
       setShowFeedback(false)
 
       const nextQuestion = questions[nextIndex]
@@ -311,6 +327,19 @@ export function QuizContainer({ questions, onQuit, quizId, quizMetadata }: QuizC
     }
   }
 
+  // Handle pairs left selection
+  const handleSelectLeft = (word: string) => {
+    setSelectedLeft(prev => prev === word ? null : word)
+  }
+
+  // Handle pairs right selection
+  const handleSelectRight = (word: string) => {
+    if (selectedLeft) {
+      setSelectedPairs(prev => ({ ...prev, [selectedLeft]: word }))
+      setSelectedLeft(null)
+    }
+  }
+
   // Show results
   if (showResults) {
     const result: QuizResult = {
@@ -378,6 +407,18 @@ export function QuizContainer({ questions, onQuit, quizId, quizMetadata }: QuizC
             placeholder={(currentQuestion as InputQuestion).placeholder}
             value={inputValue}
             onChange={setInputValue}
+          />
+        )}
+
+        {currentQuestion?.type === 'pairs' && (
+          <QuestionPairs
+            question={currentQuestion.title}
+            leftWords={(currentQuestion as PairsQuestion).leftWords}
+            rightWords={(currentQuestion as PairsQuestion).rightWords}
+            selectedPairs={selectedPairs}
+            selectedLeft={selectedLeft}
+            onSelectLeft={handleSelectLeft}
+            onSelectRight={handleSelectRight}
           />
         )}
       </div>
