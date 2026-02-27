@@ -340,6 +340,15 @@ export function QuizContainer({ questions, onQuit, quizId, quizMetadata }: QuizC
     }
   }
 
+  // Handle pairs de-selection
+  const handleDeselectPair = (leftWord: string) => {
+    setSelectedPairs(prev => {
+      const updated = { ...prev }
+      delete updated[leftWord]
+      return updated
+    })
+  }
+
   // Show results
   if (showResults) {
     const result: QuizResult = {
@@ -419,6 +428,7 @@ export function QuizContainer({ questions, onQuit, quizId, quizMetadata }: QuizC
             selectedLeft={selectedLeft}
             onSelectLeft={handleSelectLeft}
             onSelectRight={handleSelectRight}
+            onDeselectPair={handleDeselectPair}
           />
         )}
       </div>

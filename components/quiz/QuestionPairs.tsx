@@ -10,6 +10,7 @@ interface QuestionPairsProps {
     selectedLeft: string | null
     onSelectLeft: (word: string) => void
     onSelectRight: (word: string) => void
+    onDeselectPair: (leftWord: string) => void
 }
 
 // Colores para los pares emparejados (estilo Duolingo)
@@ -32,6 +33,7 @@ export function QuestionPairs({
     selectedLeft,
     onSelectLeft,
     onSelectRight,
+    onDeselectPair,
 }: QuestionPairsProps) {
     // Asignar un color a cada par emparejado
     const pairedLeftWords = Object.keys(selectedPairs)
@@ -61,18 +63,22 @@ export function QuestionPairs({
                         return (
                             <button
                                 key={`left-${word}`}
-                                onClick={() => !isPaired && onSelectLeft(word)}
-                                disabled={isPaired}
+                                onClick={() => isPaired ? onDeselectPair(word) : onSelectLeft(word)}
                                 className={cn(
-                                    'border-2 rounded-2xl p-4 cursor-pointer transition-all font-semibold text-left text-sm min-h-[56px] flex items-center',
+                                    'group border-2 rounded-2xl p-4 cursor-pointer transition-all font-semibold text-left text-sm min-h-[56px] flex items-center justify-between',
                                     isPaired && color
-                                        ? `${color.bg} ${color.border} ${color.text} cursor-default opacity-90`
+                                        ? `${color.bg} ${color.border} ${color.text} hover:opacity-70`
                                         : selectedLeft === word
                                             ? 'border-kasa-primary bg-kasa-primary/20 text-white shadow-[0_0_16px_rgba(16,185,129,0.25)] scale-[1.02]'
                                             : 'bg-kasa-card border-kasa-border text-white hover:border-text-muted hover:bg-kasa-hover active:scale-[0.98]'
                                 )}
                             >
-                                {word}
+                                <span>{word}</span>
+                                {isPaired && (
+                                    <span className="opacity-0 group-hover:opacity-100 transition-opacity text-xs ml-2">
+                                        ✕
+                                    </span>
+                                )}
                             </button>
                         )
                     })}
@@ -84,22 +90,35 @@ export function QuestionPairs({
                         const isPaired = Object.values(selectedPairs).includes(word)
                         const colorIdx = getRightColorIndex(word)
                         const color = colorIdx >= 0 ? PAIR_COLORS[colorIdx] : null
+                        // Find the left word paired to this right word for de-selection
+                        const pairedLeftWord = Object.entries(selectedPairs).find(([, v]) => v === word)?.[0]
 
                         return (
                             <button
                                 key={`right-${word}`}
-                                onClick={() => !isPaired && selectedLeft && onSelectRight(word)}
-                                disabled={isPaired || !selectedLeft}
+                                onClick={() => {
+                                    if (isPaired && pairedLeftWord) {
+                                        onDeselectPair(pairedLeftWord)
+                                    } else if (!isPaired && selectedLeft) {
+                                        onSelectRight(word)
+                                    }
+                                }}
+                                disabled={!isPaired && !selectedLeft}
                                 className={cn(
-                                    'border-2 rounded-2xl p-4 cursor-pointer transition-all font-semibold text-left text-sm min-h-[56px] flex items-center',
+                                    'group border-2 rounded-2xl p-4 cursor-pointer transition-all font-semibold text-left text-sm min-h-[56px] flex items-center justify-between',
                                     isPaired && color
-                                        ? `${color.bg} ${color.border} ${color.text} cursor-default opacity-90`
+                                        ? `${color.bg} ${color.border} ${color.text} hover:opacity-70`
                                         : !selectedLeft
                                             ? 'bg-kasa-card border-kasa-border text-text-muted cursor-not-allowed'
                                             : 'bg-kasa-card border-kasa-border text-white hover:border-text-muted hover:bg-kasa-hover active:scale-[0.98]'
                                 )}
                             >
-                                {word}
+                                <span>{word}</span>
+                                {isPaired && (
+                                    <span className="opacity-0 group-hover:opacity-100 transition-opacity text-xs ml-2">
+                                        ✕
+                                    </span>
+                                )}
                             </button>
                         )
                     })}

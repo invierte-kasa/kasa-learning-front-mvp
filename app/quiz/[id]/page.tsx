@@ -136,7 +136,7 @@ function QuizContent() {
         })
 
         const shuffled = [...detailedQuestions].sort(() => 0.5 - Math.random())
-        const selectionSize = Math.min(7, Math.max(1, shuffled.length))
+        const selectionSize = Math.min(5, Math.max(1, shuffled.length))
         const selected = shuffled.slice(0, selectionSize)
 
         setQuestions(selected)
