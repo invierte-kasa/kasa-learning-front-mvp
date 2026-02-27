@@ -175,7 +175,7 @@ export function QuizContainer({ questions, onQuit, onRetryQuiz, quizId, quizMeta
       const internalId = appUser.id
 
       const score = (correctCount / questions.length) * 100
-      const passed = score >= (quizMetadata?.minimum_score || 70)
+      const passed = score >= quizMetadata.minimum_score
       const xpEarned = passed ? (quizMetadata?.xp || 0) : 0
 
       // 1. Guardar Intento

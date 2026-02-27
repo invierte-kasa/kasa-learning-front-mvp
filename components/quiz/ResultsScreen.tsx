@@ -63,8 +63,8 @@ export function ResultsScreen({ result, passed, onNextModule, onRetryQuiz }: Res
       {/* Header */}
       <div className="text-center my-6 mb-10">
         <div className={`w-[90px] h-[90px] border-4 rounded-full flex items-center justify-center mx-auto mb-6 ${passed
-            ? 'border-kasa-primary text-kasa-primary shadow-[0_0_30px_rgba(16,185,129,0.2)] bg-kasa-primary/10'
-            : 'border-red-400 text-red-400 shadow-[0_0_30px_rgba(239,68,68,0.2)] bg-red-500/10'
+          ? 'border-kasa-primary text-kasa-primary shadow-[0_0_30px_rgba(16,185,129,0.2)] bg-kasa-primary/10'
+          : 'border-red-400 text-red-400 shadow-[0_0_30px_rgba(239,68,68,0.2)] bg-red-500/10'
           }`}>
           {passed ? <CheckIcon /> : <SadIcon />}
         </div>
@@ -127,6 +127,14 @@ export function ResultsScreen({ result, passed, onNextModule, onRetryQuiz }: Res
           <RetryIcon />
           Reintentar Quiz
         </button>
+        {!passed && (
+          <a
+            href="/sections"
+            className="text-text-muted py-3 rounded-2xl font-bold text-center text-sm hover:text-white transition-colors no-underline"
+          >
+            Volver a secciones
+          </a>
+        )}
       </div>
     </div>
   )
