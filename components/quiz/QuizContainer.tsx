@@ -333,7 +333,20 @@ export function QuizContainer({ questions, onQuit, onRetryQuiz, quizId, quizMeta
             .limit(1)
             .maybeSingle()
 
-          setNextDestination(nextQuiz ? `/quiz/${nextQuiz.id}` : `/sections/${sectionId}`)
+          if (nextQuiz) {
+            // Find the lesson of that quiz so the user reads it first
+            const { data: nextLesson } = await supabase
+              .schema('kasa_learn_journey')
+              .from('lesson')
+              .select('id')
+              .eq('quizz_id', nextQuiz.id)
+              .limit(1)
+              .maybeSingle()
+
+            setNextDestination(nextLesson ? `/lesson/${nextLesson.id}` : `/quiz/${nextQuiz.id}`)
+          } else {
+            setNextDestination(`/sections/${sectionId}`)
+          }
         } else {
           // No more modules in this section — check next section
           const { data: currentSec } = await supabase

@@ -155,9 +155,22 @@ function QuizContent() {
     router.back()
   }
 
-  const handleRetryQuiz = () => {
-    // Reload the page to re-fetch and randomize questions
-    window.location.reload()
+  const handleRetryQuiz = async () => {
+    // Find the lesson for this quiz so the user reads it first
+    const { data: lesson } = await supabase
+      .schema('kasa_learn_journey')
+      .from('lesson')
+      .select('id')
+      .eq('quizz_id', quizId)
+      .limit(1)
+      .maybeSingle()
+
+    if (lesson) {
+      router.push(`/lesson/${lesson.id}`)
+    } else {
+      // No lesson found, just reload the quiz
+      window.location.reload()
+    }
   }
 
   // Mientras carga el usuario o los datos, mostramos el spinner
