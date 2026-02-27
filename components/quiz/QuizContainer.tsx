@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { Question, QuizResult, ChoiceQuestion, ClozeQuestion, InputQuestion, PairsQuestion } from '@/types'
 import { ProgressBar } from '../ui/ProgressBar'
 import { QuestionChoice } from './QuestionChoice'
@@ -29,13 +30,14 @@ interface FilledGap {
 interface QuizContainerProps {
   questions: Question[]
   onQuit?: () => void
+  onRetryQuiz: () => void
   quizId: string
   quizMetadata: any
 }
 
 const supabase = createClient()
 
-export function QuizContainer({ questions, onQuit, quizId, quizMetadata }: QuizContainerProps) {
+export function QuizContainer({ questions, onQuit, onRetryQuiz, quizId, quizMetadata }: QuizContainerProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [selectedOption, setSelectedOption] = useState<number | null>(null)
   const [inputValue, setInputValue] = useState('')
@@ -50,6 +52,10 @@ export function QuizContainer({ questions, onQuit, quizId, quizMetadata }: QuizC
   // Para guardar las respuestas detalle
   const [userAnswers, setUserAnswers] = useState<any[]>([])
   const [isSaving, setIsSaving] = useState(false)
+  const [nextDestination, setNextDestination] = useState<string>('/')
+  const [rankPosition, setRankPosition] = useState<number | null>(null)
+  const [totalXp, setTotalXp] = useState(0)
+  const [quizPassed, setQuizPassed] = useState(false)
 
   const currentQuestion = questions[currentIndex]
   const progress = (currentIndex / questions.length) * 100
@@ -158,6 +164,7 @@ export function QuizContainer({ questions, onQuit, quizId, quizMetadata }: QuizC
   }
 
   const { user: appUser } = useUser()
+  const router = useRouter()
 
   const finalizeQuiz = async () => {
     setIsSaving(true)
@@ -299,6 +306,78 @@ export function QuizContainer({ questions, onQuit, quizId, quizMetadata }: QuizC
         }
       }
 
+      // Compute next destination
+      const moduleId = quizMetadata.module_id || quizMetadata.module?.id
+      const sectionId = quizMetadata.module?.section_id
+
+      if (passed && moduleId && sectionId) {
+        // Check if there's a next module in the same section
+        const { data: allModules } = await supabase
+          .schema('kasa_learn_journey')
+          .from('module')
+          .select('id, module_number')
+          .eq('section_id', sectionId)
+          .order('module_number', { ascending: true })
+
+        const currentMod = allModules?.find(m => m.id === moduleId)
+        const nextMod = allModules?.find(m => m.module_number === (currentMod?.module_number! + 1))
+
+        if (nextMod) {
+          // Find the quiz of the next module
+          const { data: nextQuiz } = await supabase
+            .schema('kasa_learn_journey')
+            .from('quizz')
+            .select('id')
+            .eq('module_id', nextMod.id)
+            .order('quizz_number', { ascending: true })
+            .limit(1)
+            .maybeSingle()
+
+          setNextDestination(nextQuiz ? `/quiz/${nextQuiz.id}` : `/sections/${sectionId}`)
+        } else {
+          // No more modules in this section — check next section
+          const { data: currentSec } = await supabase
+            .schema('kasa_learn_journey')
+            .from('section')
+            .select('level')
+            .eq('id', sectionId)
+            .single()
+
+          const { data: nextSec } = await supabase
+            .schema('kasa_learn_journey')
+            .from('section')
+            .select('id')
+            .eq('level', (currentSec?.level || 0) + 1)
+            .maybeSingle()
+
+          setNextDestination(nextSec ? `/sections/${nextSec.id}` : '/')
+        }
+      } else {
+        setNextDestination('/')
+      }
+
+      // Fetch user's ranking position and total XP
+      try {
+        const { data: userData } = await supabase
+          .schema('kasa_learn_journey')
+          .from('user')
+          .select('xp')
+          .eq('id', internalId)
+          .maybeSingle()
+
+        setTotalXp(userData?.xp || 0)
+
+        const res = await fetch('/api/ranking?tab=xp')
+        if (res.ok) {
+          const rankings = await res.json()
+          const userRank = rankings.find((r: any) => r.id === internalId)
+          setRankPosition(userRank?.rank || null)
+        }
+      } catch {
+        // ranking fetch is non-critical
+      }
+
+      setQuizPassed(passed)
       setShowResults(true)
     } catch (err) {
       console.error("Error saving quiz progress:", err)
@@ -355,12 +434,18 @@ export function QuizContainer({ questions, onQuit, quizId, quizMetadata }: QuizC
       totalQuestions: questions.length,
       correctAnswers: correctCount,
       percentage: Math.round((correctCount / questions.length) * 100),
-      xpEarned: (correctCount / questions.length) >= 0.7 ? (quizMetadata?.xp || 250) : 0,
-      streakBonus: 1,
+      xpEarned: quizPassed ? (quizMetadata?.xp || 250) : 0,
+      totalXp,
+      rankPosition,
     }
     return (
       <div className="max-w-[600px] w-full mx-auto flex-1 flex flex-col p-6">
-        <ResultsScreen result={result} />
+        <ResultsScreen
+          result={result}
+          passed={quizPassed}
+          onNextModule={() => router.push(nextDestination)}
+          onRetryQuiz={onRetryQuiz}
+        />
       </div>
     )
   }

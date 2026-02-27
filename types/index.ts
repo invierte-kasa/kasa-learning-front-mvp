@@ -108,8 +108,8 @@ export interface QuizResult {
   correctAnswers: number;
   percentage: number;
   xpEarned: number;
-  streakBonus: number;
-  badgeEarned?: string;
+  totalXp: number;
+  rankPosition: number | null;
 }
 
 // Ranking types

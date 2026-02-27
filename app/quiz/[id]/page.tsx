@@ -155,6 +155,11 @@ function QuizContent() {
     router.back()
   }
 
+  const handleRetryQuiz = () => {
+    // Reload the page to re-fetch and randomize questions
+    window.location.reload()
+  }
+
   // Mientras carga el usuario o los datos, mostramos el spinner
   if (userLoading || (loading && !error)) return (
     <div className="min-h-screen bg-[#101a28] flex items-center justify-center text-white">
@@ -179,6 +184,7 @@ function QuizContent() {
       <QuizContainer
         questions={questions}
         onQuit={handleQuit}
+        onRetryQuiz={handleRetryQuiz}
         quizId={quizId}
         quizMetadata={quizMetadata}
       />
