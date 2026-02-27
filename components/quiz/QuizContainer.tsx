@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Question, QuizResult, ChoiceQuestion, ClozeQuestion, InputQuestion, PairsQuestion } from '@/types'
 import { ProgressBar } from '../ui/ProgressBar'
@@ -65,6 +65,13 @@ export function QuizContainer({ questions, onQuit, onRetryQuiz, quizId, quizMeta
     const gapCount = (question.sentence.match(/\[gap\]/g) || []).length
     setFilledGaps(Array(gapCount).fill(null))
   }, [])
+
+  // Initialize cloze on first render if the first question is cloze
+  useEffect(() => {
+    if (questions[0]?.type === 'cloze') {
+      initializeCloze(questions[0] as ClozeQuestion)
+    }
+  }, [questions, initializeCloze])
 
   // Check if answer can be submitted
   const canSubmit = useCallback(() => {

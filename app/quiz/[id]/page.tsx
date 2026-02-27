@@ -124,7 +124,11 @@ function QuizContent() {
 
         // Process Pairs
         pairsRes.data?.forEach(data => {
-          const shuffledRight = [...(data.right_words || [])].sort(() => 0.5 - Math.random())
+          const shuffledRight = [...(data.right_words || [])]
+          for (let i = shuffledRight.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffledRight[i], shuffledRight[j]] = [shuffledRight[j], shuffledRight[i]]
+          }
           detailedQuestions.push({
             id: data.question_id,
             type: 'pairs',
@@ -135,7 +139,12 @@ function QuizContent() {
           })
         })
 
-        const shuffled = [...detailedQuestions].sort(() => 0.5 - Math.random())
+        // Fisher-Yates shuffle for unbiased randomization
+        const shuffled = [...detailedQuestions]
+        for (let i = shuffled.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+        }
         const selectionSize = Math.min(5, Math.max(1, shuffled.length))
         const selected = shuffled.slice(0, selectionSize)
 
