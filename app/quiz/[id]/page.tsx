@@ -101,21 +101,22 @@ function QuizContent() {
 
         // Process Cloze
         clozesRes.data?.forEach(data => {
-          let sentence = (data.words || []).join(' ')
+          // Use the question text as the sentence — it already contains ___ for blanks
+          let sentence = data.question || (data.words || []).join(' ')
           const correct = data.correct_words || []
-          if (!sentence.includes('[gap]')) {
+
+          // Replace ___ patterns with [gap] markers
+          if (sentence.includes('___')) {
+            sentence = sentence.replace(/_{2,}/g, '[gap]')
+          } else if (!sentence.includes('[gap]')) {
+            // Fallback: replace correct words with [gap] if no markers exist
             correct.forEach((word: string) => {
               sentence = sentence.replace(word, '[gap]')
             })
           }
 
-          // Build pool: only correct words (+ any extra distractor words not in the sentence)
-          const sentenceWithoutGaps = sentence.replace(/\[gap\]/g, '').split(/\s+/).filter(Boolean)
-          const extraWords = (data.words || []).filter((w: string) =>
-            !sentenceWithoutGaps.includes(w) && !correct.includes(w)
-          )
-          const pool = [...correct, ...extraWords]
-          // Shuffle pool
+          // Pool = all available words (correct + distractors), shuffled
+          const pool = [...(data.words || [])]
           for (let i = pool.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [pool[i], pool[j]] = [pool[j], pool[i]]
@@ -124,7 +125,7 @@ function QuizContent() {
           detailedQuestions.push({
             id: data.question_id,
             type: 'cloze',
-            title: data.question || 'Completa la oración correctamente',
+            title: 'Completa la oración correctamente',
             sentence: sentence,
             pool: pool,
             correct: correct
