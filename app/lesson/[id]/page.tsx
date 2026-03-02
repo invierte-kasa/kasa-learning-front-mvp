@@ -269,6 +269,31 @@ function LessonContent() {
     fetchNewLessons()
   }, [activeQuizIndex, quizzes, moduleData, loading, lessonsData]) // Only trigger on manual index change, include lessonsData[0]?.quizz_id to prevent re-fetch if already loaded
 
+  // 3. Check module completion status — runs when user data and module data are both available
+  useEffect(() => {
+    if (!appUser || userLoading || !moduleData?.id) return
+
+    const checkModuleCompletion = async () => {
+      try {
+        const { data: modProgress } = await supabase
+          .schema('kasa_learn_journey')
+          .from('user_module_progress')
+          .select('status')
+          .eq('user_id', appUser.id)
+          .eq('module_id', moduleData.id)
+          .maybeSingle()
+
+        if (modProgress?.status === 'completed') {
+          setModuleCompleted(true)
+        }
+      } catch (err) {
+        console.error('[LessonPage] Error checking module completion:', err)
+      }
+    }
+
+    checkModuleCompletion()
+  }, [appUser, userLoading, moduleData])
+
   if (loading) return (
     <div className="flex-1 flex items-center justify-center bg-[#101a28] text-white min-h-screen">
       <div className="animate-pulse text-lg font-bold">Cargando módulo...</div>
