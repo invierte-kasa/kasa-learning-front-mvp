@@ -301,7 +301,7 @@ function SectionDetailContent() {
                                 >
                                     <ModuleCard
                                         module={module}
-                                        href={module.status === 'active' ? `/lesson/${(module as any).firstQuizzId || module.id}` : undefined}
+                                        href={module.status !== 'locked' ? `/lesson/${(module as any).firstQuizzId || module.id}` : undefined}
                                     />
                                 </motion.div>
                             ))
