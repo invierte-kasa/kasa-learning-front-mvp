@@ -80,6 +80,7 @@ function LessonContent() {
   const [activeQuizIndex, setActiveQuizIndex] = useState(0)
   const [lessonsData, setLessonsData] = useState<any[]>([])
   const [lessonLoading, setLessonLoading] = useState(false)
+  const [moduleCompleted, setModuleCompleted] = useState(false)
 
   // 1. Fetch EVERYTHING (Module, Quizzes, AND the first Lesson)
   useEffect(() => {
@@ -162,6 +163,10 @@ function LessonContent() {
             .eq('user_id', internalId)
             .eq('module_id', moduleId)
             .maybeSingle()
+
+          if (modProgress?.status === 'completed') {
+            setModuleCompleted(true)
+          }
 
           if (!modProgress) {
             await supabase
@@ -412,15 +417,17 @@ function LessonContent() {
           </div>
 
           {/* Sticky Action Footer */}
-          <div className="fixed bottom-[calc(80px+env(safe-area-inset-bottom))] left-0 w-full px-6 py-8 bg-transparent z-50 flex flex-col items-center gap-4 lg:left-[260px] lg:w-[calc(100%-260px)]">
-            <Link href={`/quiz/${currentQuiz?.id}`} className="w-full max-w-[420px] no-underline">
-              <Button fullWidth size="lg" className="h-16 rounded-2xl text-lg font-black tracking-wide shadow-xl shadow-kasa-primary/25 gap-3 group">
-                COMENZAR EXAMEN
-                <FileIcon />
-              </Button>
-            </Link>
-            <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest">Gana hasta {stepMetadata.xp} XP</p>
-          </div>
+          {!moduleCompleted && (
+            <div className="fixed bottom-[calc(80px+env(safe-area-inset-bottom))] left-0 w-full px-6 py-8 bg-transparent z-50 flex flex-col items-center gap-4 lg:left-[260px] lg:w-[calc(100%-260px)]">
+              <Link href={`/quiz/${currentQuiz?.id}`} className="w-full max-w-[420px] no-underline">
+                <Button fullWidth size="lg" className="h-16 rounded-2xl text-lg font-black tracking-wide shadow-xl shadow-kasa-primary/25 gap-3 group">
+                  COMENZAR EXAMEN
+                  <FileIcon />
+                </Button>
+              </Link>
+              <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest">Gana hasta {stepMetadata.xp} XP</p>
+            </div>
+          )}
         </div>
       </main>
 
