@@ -60,6 +60,9 @@ export function QuestionPairs({
                         const colorIdx = getColorIndex(word)
                         const color = colorIdx >= 0 ? PAIR_COLORS[colorIdx] : null
 
+                        // Color that this word will get when paired (next available color)
+                        const nextColor = PAIR_COLORS[pairedLeftWords.length % PAIR_COLORS.length]
+
                         return (
                             <button
                                 key={`left-${word}`}
@@ -69,7 +72,7 @@ export function QuestionPairs({
                                     isPaired && color
                                         ? `${color.bg} ${color.border} ${color.text} hover:opacity-70`
                                         : selectedLeft === word
-                                            ? 'border-kasa-primary bg-kasa-primary/20 text-white shadow-[0_0_16px_rgba(16,185,129,0.25)] scale-[1.02]'
+                                            ? `${nextColor.bg} ${nextColor.border} ${nextColor.text} shadow-[0_0_16px_rgba(0,0,0,0.15)] scale-[1.02]`
                                             : 'bg-kasa-card border-kasa-border text-white hover:border-text-muted hover:bg-kasa-hover active:scale-[0.98]'
                                 )}
                             >
