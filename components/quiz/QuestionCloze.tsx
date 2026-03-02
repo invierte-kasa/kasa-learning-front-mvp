@@ -33,7 +33,7 @@ export function QuestionCloze({
       <h2 className="text-2xl font-extrabold mb-8 leading-snug text-white">{question}</h2>
 
       {/* Sentence with gaps */}
-      <div className="text-xl leading-[2.2] mb-12 text-center text-white">
+      <div className="text-xl leading-[2.8] mb-12 text-center text-white">
         {parts.map((part, i) => (
           <span key={i}>
             {part}
@@ -41,13 +41,18 @@ export function QuestionCloze({
               <button
                 onClick={() => filledGaps[i] && onClearGap(i)}
                 className={cn(
-                  'inline-flex min-w-[100px] h-10 mx-2 rounded align-middle items-center justify-center transition-all',
+                  'group relative inline-flex w-[140px] h-10 mx-2 rounded align-middle items-center justify-center transition-all',
                   filledGaps[i]
-                    ? 'bg-kasa-card border-b-[3px] border-kasa-primary px-4 font-bold text-white cursor-pointer'
+                    ? 'bg-kasa-card border-b-[3px] border-kasa-primary font-bold text-white cursor-pointer hover:border-red-400'
                     : 'bg-white/5 border-b-[3px] border-kasa-border'
                 )}
               >
-                {filledGaps[i]?.word || ''}
+                <span className="truncate px-2">{filledGaps[i]?.word || ''}</span>
+                {filledGaps[i] && (
+                  <span className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity shadow-md">
+                    ✕
+                  </span>
+                )}
               </button>
             )}
           </span>
