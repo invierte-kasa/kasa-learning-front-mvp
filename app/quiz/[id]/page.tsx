@@ -82,12 +82,19 @@ function QuizContent() {
 
         // Process Choices
         choicesRes.data?.forEach(data => {
-          const correctIndex = data.answers.indexOf(data.correct_answers)
+          const correctAnswer = data.correct_answers
+          const shuffledOptions = [...(data.answers || [])]
+          // Fisher-Yates shuffle
+          for (let i = shuffledOptions.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffledOptions[i], shuffledOptions[j]] = [shuffledOptions[j], shuffledOptions[i]]
+          }
+          const correctIndex = shuffledOptions.indexOf(correctAnswer)
           detailedQuestions.push({
             id: data.question_id,
             type: 'choice',
             title: data.question || 'Selecciona la respuesta correcta',
-            options: data.answers || [],
+            options: shuffledOptions,
             correct: correctIndex >= 0 ? correctIndex : 0
           })
         })
@@ -101,12 +108,25 @@ function QuizContent() {
               sentence = sentence.replace(word, '[gap]')
             })
           }
+
+          // Build pool: only correct words (+ any extra distractor words not in the sentence)
+          const sentenceWithoutGaps = sentence.replace(/\[gap\]/g, '').split(/\s+/).filter(Boolean)
+          const extraWords = (data.words || []).filter((w: string) =>
+            !sentenceWithoutGaps.includes(w) && !correct.includes(w)
+          )
+          const pool = [...correct, ...extraWords]
+          // Shuffle pool
+          for (let i = pool.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [pool[i], pool[j]] = [pool[j], pool[i]]
+          }
+
           detailedQuestions.push({
             id: data.question_id,
             type: 'cloze',
             title: data.question || 'Completa la oración correctamente',
             sentence: sentence,
-            pool: data.words || [],
+            pool: pool,
             correct: correct
           })
         })

@@ -10,7 +10,7 @@ import { QuestionInput } from './QuestionInput'
 import { QuestionPairs } from './QuestionPairs'
 import { FeedbackOverlay } from './FeedbackOverlay'
 import { ResultsScreen } from './ResultsScreen'
-import { normalizeString } from '@/lib/utils'
+import { normalizeString, cn } from '@/lib/utils'
 import { createClient } from '@/utils/supabase/client'
 import { useUser } from '@/context/UserContext'
 
@@ -486,7 +486,10 @@ export function QuizContainer({ questions, onQuit, onRetryQuiz, quizId, quizMeta
       </header>
 
       {/* Question content */}
-      <div className="flex-1 flex flex-col">
+      <div className={cn(
+        "flex-1 flex flex-col transition-all duration-300 relative",
+        showFeedback && "opacity-40 pointer-events-none select-none"
+      )}>
         {currentQuestion?.type === 'choice' && (
           <QuestionChoice
             question={currentQuestion.title}
@@ -531,7 +534,10 @@ export function QuizContainer({ questions, onQuit, onRetryQuiz, quizId, quizMeta
       </div>
 
       {/* Footer */}
-      <div className="border-t-2 border-kasa-border py-6 mt-8 flex justify-end">
+      <div className={cn(
+        "border-t-2 border-kasa-border py-6 mt-8 flex justify-end transition-all duration-300",
+        showFeedback && "opacity-40 pointer-events-none select-none"
+      )}>
         <button
           onClick={handleCheck}
           disabled={!canSubmit()}
