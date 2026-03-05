@@ -142,6 +142,7 @@ function SectionDetailContent() {
                     let quizArray = Array.isArray(mod.quizz) ? mod.quizz : (mod.quizz ? [mod.quizz] : []);
                     const sortedQuizzes = [...quizArray].sort((a: any, b: any) => (a.quizz_number || 0) - (b.quizz_number || 0))
                     const firstQuizzId = sortedQuizzes.length > 0 ? sortedQuizzes[0].id : null
+                    const quizCount = quizArray.length
 
                     // Un módulo es 'active' si:
                     // 1. Es el current_module en la tabla progress
@@ -167,7 +168,8 @@ function SectionDetailContent() {
                         status: status,
                         duration: mod.estimated_time_in_minutes,
                         xp: mod.xp,
-                        firstQuizzId: firstQuizzId
+                        firstQuizzId: firstQuizzId,
+                        quizCount: quizCount
                     }
                 })
 
@@ -301,7 +303,12 @@ function SectionDetailContent() {
                                 >
                                     <ModuleCard
                                         module={module}
-                                        href={module.status !== 'locked' ? `/lesson/${(module as any).firstQuizzId || module.id}` : undefined}
+                                        href={module.status !== 'locked'
+                                            ? (module as any).quizCount > 1
+                                                ? `/module/${module.id}`
+                                                : `/lesson/${(module as any).firstQuizzId || module.id}`
+                                            : undefined
+                                        }
                                     />
                                 </motion.div>
                             ))

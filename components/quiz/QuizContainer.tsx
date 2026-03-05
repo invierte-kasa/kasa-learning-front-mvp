@@ -346,51 +346,70 @@ export function QuizContainer({ questions, onQuit, onRetryQuiz, quizId, quizMeta
       const sectionId = quizMetadata.module?.section_id
 
       if (passed && moduleId && sectionId) {
-        // Check if there's a next module in the same section
-        const { data: allModules } = await supabase
+        // Check if there are more quizzes in the current module
+        const { data: moduleQuizzes } = await supabase
           .schema('kasa_learn_journey')
-          .from('module')
-          .select('id, module_number')
-          .eq('section_id', sectionId)
-          .order('module_number', { ascending: true })
+          .from('quizz')
+          .select('id, quizz_number')
+          .eq('module_id', moduleId)
+          .order('quizz_number', { ascending: true })
 
-        const currentMod = allModules?.find(m => m.id === moduleId)
-        const nextMod = allModules?.find(m => m.module_number === (currentMod?.module_number! + 1))
+        const currentQuizIdx = moduleQuizzes?.findIndex(q => q.id === quizMetadata.id) ?? -1
+        const nextQuizInModule = moduleQuizzes && currentQuizIdx >= 0 && currentQuizIdx < moduleQuizzes.length - 1
+          ? moduleQuizzes[currentQuizIdx + 1]
+          : null
 
-        if (nextMod) {
-          // Find the quiz of the next module
-          const { data: nextQuiz } = await supabase
-            .schema('kasa_learn_journey')
-            .from('quizz')
-            .select('id')
-            .eq('module_id', nextMod.id)
-            .order('quizz_number', { ascending: true })
-            .limit(1)
-            .maybeSingle()
-
-          if (nextQuiz) {
-            // The lesson page expects a quiz ID — it fetches lessons internally
-            setNextDestination(`/lesson/${nextQuiz.id}`)
-          } else {
-            setNextDestination(`/sections/${sectionId}`)
-          }
+        if (nextQuizInModule) {
+          // There are more quizzes in this module — go back to module overview
+          setNextDestination(`/module/${moduleId}`)
         } else {
-          // No more modules in this section — check next section
-          const { data: currentSec } = await supabase
+          // All quizzes in this module done — check next module
+          const { data: allModules } = await supabase
             .schema('kasa_learn_journey')
-            .from('section')
-            .select('level')
-            .eq('id', sectionId)
-            .single()
+            .from('module')
+            .select('id, module_number')
+            .eq('section_id', sectionId)
+            .order('module_number', { ascending: true })
 
-          const { data: nextSec } = await supabase
-            .schema('kasa_learn_journey')
-            .from('section')
-            .select('id')
-            .eq('level', (currentSec?.level || 0) + 1)
-            .maybeSingle()
+          const currentMod = allModules?.find(m => m.id === moduleId)
+          const nextMod = allModules?.find(m => m.module_number === (currentMod?.module_number! + 1))
 
-          setNextDestination(nextSec ? `/sections/${nextSec.id}` : '/')
+          if (nextMod) {
+            // Check how many quizzes the next module has
+            const { data: nextModQuizzes } = await supabase
+              .schema('kasa_learn_journey')
+              .from('quizz')
+              .select('id')
+              .eq('module_id', nextMod.id)
+              .order('quizz_number', { ascending: true })
+
+            if (nextModQuizzes && nextModQuizzes.length > 1) {
+              // Next module has multiple quizzes → go to module overview
+              setNextDestination(`/module/${nextMod.id}`)
+            } else if (nextModQuizzes && nextModQuizzes.length === 1) {
+              // Next module has one quiz → go directly to lesson
+              setNextDestination(`/lesson/${nextModQuizzes[0].id}`)
+            } else {
+              setNextDestination(`/sections/${sectionId}`)
+            }
+          } else {
+            // No more modules in this section — check next section
+            const { data: currentSec } = await supabase
+              .schema('kasa_learn_journey')
+              .from('section')
+              .select('level')
+              .eq('id', sectionId)
+              .single()
+
+            const { data: nextSec } = await supabase
+              .schema('kasa_learn_journey')
+              .from('section')
+              .select('id')
+              .eq('level', (currentSec?.level || 0) + 1)
+              .maybeSingle()
+
+            setNextDestination(nextSec ? `/sections/${nextSec.id}` : '/')
+          }
         }
       } else {
         setNextDestination('/')
