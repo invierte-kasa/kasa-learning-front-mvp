@@ -236,24 +236,15 @@ function ModuleOverviewContent() {
         return `/lesson/${q.id}`
     }
 
-    // Determine if a quiz is locked (sequential progression)
-    const isQuizLocked = (index: number) => {
-        if (index === 0) return false
-        // The previous quiz must be passed
-        return !quizzes[index - 1].passed
-    }
-
     // Determine the CTA label
-    const getCtaLabel = (q: QuizDetail, index: number) => {
+    const getCtaLabel = (q: QuizDetail) => {
         if (q.passed) {
             if (q.lessonCount > 0) return 'Repasar'
             return 'Reintentar'
         }
-        if (index === nextQuizIndex) {
-            if (q.lessonCount > 0 && q.questionCount > 0) return 'Comenzar'
-            if (q.lessonCount > 0) return 'Leer'
-            return 'Examen'
-        }
+        if (q.lessonCount > 0 && q.questionCount > 0) return 'Comenzar'
+        if (q.lessonCount > 0) return 'Leer'
+        if (q.questionCount > 0) return 'Examen'
         return 'Comenzar'
     }
 
@@ -347,8 +338,7 @@ function ModuleOverviewContent() {
                 {/* Quiz Cards */}
                 <div className="flex flex-col gap-4">
                     {quizzes.map((quiz, index) => {
-                        const locked = isQuizLocked(index)
-                        const isNext = index === nextQuizIndex
+                        const isNext = !quiz.passed && index === nextQuizIndex
                         const href = getQuizHref(quiz)
 
                         return (
@@ -364,9 +354,7 @@ function ModuleOverviewContent() {
                                             ? "border-kasa-primary/30"
                                             : isNext
                                                 ? "border-kasa-primary/50 shadow-lg shadow-kasa-primary/10"
-                                                : locked
-                                                    ? "border-kasa-border opacity-50"
-                                                    : "border-kasa-border"
+                                                : "border-kasa-border"
                                     )}
                                 >
                                     {/* Active indicator */}
@@ -380,16 +368,12 @@ function ModuleOverviewContent() {
                                             "w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0",
                                             quiz.passed
                                                 ? "bg-kasa-primary/15 text-kasa-primary"
-                                                : locked
-                                                    ? "bg-white/[0.02] border border-dashed border-kasa-border text-text-disabled"
-                                                    : isNext
-                                                        ? "bg-kasa-primary/15 text-kasa-primary"
-                                                        : "bg-white/5 text-text-muted"
+                                                : isNext
+                                                    ? "bg-kasa-primary/15 text-kasa-primary"
+                                                    : "bg-white/5 text-text-muted"
                                         )}>
                                             {quiz.passed ? (
                                                 <CheckCircleIcon />
-                                            ) : locked ? (
-                                                <LockIcon />
                                             ) : (
                                                 <span className="text-lg font-black">{quiz.quizz_number || index + 1}</span>
                                             )}
@@ -400,7 +384,7 @@ function ModuleOverviewContent() {
                                             <div className="flex items-center gap-2 mb-1">
                                                 <h3 className={cn(
                                                     "text-base font-bold",
-                                                    locked ? "text-text-muted" : "text-white"
+                                                    "text-white"
                                                 )}>
                                                     Etapa {quiz.quizz_number || index + 1}
                                                 </h3>
@@ -461,26 +445,19 @@ function ModuleOverviewContent() {
 
                                             {/* CTA */}
                                             <div className="flex items-center gap-3">
-                                                {!locked ? (
-                                                    <Link href={href} className="no-underline">
-                                                        <button className={cn(
-                                                            "flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all cursor-pointer border-none",
-                                                            quiz.passed
-                                                                ? "bg-white/5 text-white/60 hover:bg-white/10"
-                                                                : isNext
-                                                                    ? "bg-kasa-primary text-white shadow-[0_3px_0_#059669] active:translate-y-0.5 active:shadow-[0_1px_0_#059669]"
-                                                                    : "bg-white/5 text-white hover:bg-white/10"
-                                                        )}>
-                                                            {quiz.passed ? null : <PlayIcon />}
-                                                            {getCtaLabel(quiz, index)}
-                                                        </button>
-                                                    </Link>
-                                                ) : (
-                                                    <span className="text-xs text-text-disabled font-bold flex items-center gap-1.5">
-                                                        <LockIcon />
-                                                        Completa la etapa anterior
-                                                    </span>
-                                                )}
+                                                <Link href={href} className="no-underline">
+                                                    <button className={cn(
+                                                        "flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all cursor-pointer border-none",
+                                                        quiz.passed
+                                                            ? "bg-white/5 text-white/60 hover:bg-white/10"
+                                                            : isNext
+                                                                ? "bg-kasa-primary text-white shadow-[0_3px_0_#059669] active:translate-y-0.5 active:shadow-[0_1px_0_#059669]"
+                                                                : "bg-white/5 text-white hover:bg-white/10"
+                                                    )}>
+                                                        {quiz.passed ? null : <PlayIcon />}
+                                                        {getCtaLabel(quiz)}
+                                                    </button>
+                                                </Link>
 
                                                 {quiz.passed && (
                                                     <span className="text-xs text-kasa-primary font-bold flex items-center gap-1">

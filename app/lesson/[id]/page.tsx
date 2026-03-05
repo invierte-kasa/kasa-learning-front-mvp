@@ -674,7 +674,7 @@ function LessonContent() {
           </div>
 
           {/* Sticky Action Footer */}
-          {!moduleCompleted && (
+          {(
             <div className="fixed bottom-[calc(80px+env(safe-area-inset-bottom))] left-0 w-full px-6 py-8 bg-transparent z-50 flex flex-col items-center gap-4 lg:left-[260px] lg:w-[calc(100%-260px)]">
               {/* If user hasn't finished all lessons yet */}
               {!allLessonsRead ? (
