@@ -93,6 +93,34 @@ export function QuizContainer({ questions, onQuit, onRetryQuiz, quizId, quizMeta
     }
   }, [currentQuestion, selectedOption, inputValue, filledGaps, selectedPairs])
 
+  // Get correct answer text for feedback display
+  const getCorrectAnswerText = useCallback((): string => {
+    if (!currentQuestion) return ''
+
+    switch (currentQuestion.type) {
+      case 'choice': {
+        const q = currentQuestion as ChoiceQuestion
+        return q.options[q.correct]
+      }
+      case 'input': {
+        const q = currentQuestion as InputQuestion
+        return q.correct
+      }
+      case 'cloze': {
+        const q = currentQuestion as ClozeQuestion
+        return q.correct.join(', ')
+      }
+      case 'pairs': {
+        const q = currentQuestion as PairsQuestion
+        return Object.entries(q.correctRelations)
+          .map(([left, right]) => `${left} → ${right}`)
+          .join('  •  ')
+      }
+      default:
+        return ''
+    }
+  }, [currentQuestion])
+
   // Validate answer
   const checkAnswer = useCallback(() => {
     if (!currentQuestion) return false
@@ -549,7 +577,12 @@ export function QuizContainer({ questions, onQuit, onRetryQuiz, quizId, quizMeta
 
       {/* Feedback overlay */}
       {showFeedback && (
-        <FeedbackOverlay isCorrect={isCorrect} onContinue={handleContinue} />
+        <FeedbackOverlay
+          isCorrect={isCorrect}
+          onContinue={handleContinue}
+          correctAnswer={!isCorrect ? getCorrectAnswerText() : undefined}
+          questionType={currentQuestion?.type}
+        />
       )}
     </div>
   )

@@ -108,6 +108,46 @@
     }
   }
 
+  @keyframes slideUp {
+    0% {
+      opacity: 0;
+      transform: translateY(100%);
+    }
+
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes shakeX {
+
+    0%,
+    100% {
+      transform: translateX(0);
+    }
+
+    15% {
+      transform: translateX(-6px);
+    }
+
+    30% {
+      transform: translateX(5px);
+    }
+
+    45% {
+      transform: translateX(-4px);
+    }
+
+    60% {
+      transform: translateX(3px);
+    }
+
+    75% {
+      transform: translateX(-2px);
+    }
+  }
+
   .animate-toast-in {
     animation: toastIn 0.3s ease-out forwards;
   }
