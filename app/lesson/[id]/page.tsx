@@ -102,7 +102,6 @@ function LessonContent() {
   const [activeQuizIndex, setActiveQuizIndex] = useState(0)
   const [lessonsData, setLessonsData] = useState<LessonData[]>([])
   const [lessonLoading, setLessonLoading] = useState(false)
-  const [moduleCompleted, setModuleCompleted] = useState(false)
   const [hasQuestions, setHasQuestions] = useState(true)
 
   // Track which lesson the user is currently viewing (within the current quiz's lessons)
@@ -213,7 +212,6 @@ function LessonContent() {
             .maybeSingle()
 
           if (modProgress?.status === 'completed') {
-            setModuleCompleted(true)
           }
 
           if (!modProgress) {
@@ -338,31 +336,6 @@ function LessonContent() {
     fetchNewLessons()
   }, [activeQuizIndex, quizzes, moduleData, loading, lessonsData])
 
-  // 3. Check module completion status
-  useEffect(() => {
-    if (!appUser || userLoading || !moduleData?.id) return
-
-    const checkModuleCompletion = async () => {
-      try {
-        const { data: modProgress } = await supabase
-          .schema('kasa_learn_journey')
-          .from('user_module_progress')
-          .select('status')
-          .eq('user_id', appUser.id)
-          .eq('module_id', moduleData.id)
-          .maybeSingle()
-
-        if (modProgress?.status === 'completed') {
-          setModuleCompleted(true)
-        }
-      } catch (err) {
-        console.error('[LessonPage] Error checking module completion:', err)
-      }
-    }
-
-    checkModuleCompletion()
-  }, [appUser, userLoading, moduleData])
-
   // Handlers for lesson navigation
   const handleNextLesson = () => {
     setActiveLessonIndex(prev => prev + 1)
@@ -467,10 +440,8 @@ function LessonContent() {
                 <button
                   key={idx}
                   onClick={() => {
-                    if (idx <= activeLessonIndex) {
-                      setActiveLessonIndex(idx)
-                      window.scrollTo({ top: 0, behavior: 'smooth' })
-                    }
+                    setActiveLessonIndex(idx)
+                    window.scrollTo({ top: 0, behavior: 'smooth' })
                   }}
                   className={cn(
                     "flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all border cursor-pointer",
@@ -478,7 +449,7 @@ function LessonContent() {
                       ? "bg-kasa-primary/15 border-kasa-primary/40 text-kasa-primary"
                       : idx < activeLessonIndex
                         ? "bg-kasa-primary/10 border-kasa-primary/20 text-kasa-primary/70"
-                        : "bg-white/5 border-white/10 text-white/30 cursor-not-allowed"
+                        : "bg-white/5 border-white/10 text-white/50 hover:bg-white/10"
                   )}
                 >
                   {idx < activeLessonIndex ? (
@@ -674,7 +645,6 @@ function LessonContent() {
           </div>
 
           {/* Sticky Action Footer */}
-          {(
             <div className="fixed bottom-[calc(80px+env(safe-area-inset-bottom))] left-0 w-full px-6 py-8 bg-transparent z-50 flex flex-col items-center gap-4 lg:left-[260px] lg:w-[calc(100%-260px)]">
               {/* If user hasn't finished all lessons yet */}
               {!allLessonsRead ? (
@@ -745,7 +715,6 @@ function LessonContent() {
                 {hasQuestions ? `Gana hasta ${stepMetadata.xp} XP` : 'Solo lectura'}
               </p>
             </div>
-          )}
         </div>
       </main>
 

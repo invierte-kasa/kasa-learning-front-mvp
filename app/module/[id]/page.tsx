@@ -40,13 +40,6 @@ const CheckCircleIcon = () => (
     </svg>
 )
 
-const LockIcon = () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-    </svg>
-)
-
 const PlayIcon = () => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
         <polygon points="5 3 19 12 5 21 5 3" />
@@ -237,14 +230,16 @@ function ModuleOverviewContent() {
     }
 
     // Determine the CTA label
-    const getCtaLabel = (q: QuizDetail) => {
+    const getCtaLabel = (q: QuizDetail, index: number) => {
         if (q.passed) {
             if (q.lessonCount > 0) return 'Repasar'
             return 'Reintentar'
         }
-        if (q.lessonCount > 0 && q.questionCount > 0) return 'Comenzar'
-        if (q.lessonCount > 0) return 'Leer'
-        if (q.questionCount > 0) return 'Examen'
+        if (index === nextQuizIndex) {
+            if (q.lessonCount > 0 && q.questionCount > 0) return 'Comenzar'
+            if (q.lessonCount > 0) return 'Leer'
+            return 'Examen'
+        }
         return 'Comenzar'
     }
 
@@ -338,7 +333,7 @@ function ModuleOverviewContent() {
                 {/* Quiz Cards */}
                 <div className="flex flex-col gap-4">
                     {quizzes.map((quiz, index) => {
-                        const isNext = !quiz.passed && index === nextQuizIndex
+                        const isNext = index === nextQuizIndex
                         const href = getQuizHref(quiz)
 
                         return (
@@ -382,10 +377,7 @@ function ModuleOverviewContent() {
                                         {/* Content */}
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2 mb-1">
-                                                <h3 className={cn(
-                                                    "text-base font-bold",
-                                                    "text-white"
-                                                )}>
+                                                <h3 className="text-base font-bold text-white">
                                                     Etapa {quiz.quizz_number || index + 1}
                                                 </h3>
 
@@ -455,7 +447,7 @@ function ModuleOverviewContent() {
                                                                 : "bg-white/5 text-white hover:bg-white/10"
                                                     )}>
                                                         {quiz.passed ? null : <PlayIcon />}
-                                                        {getCtaLabel(quiz)}
+                                                        {getCtaLabel(quiz, index)}
                                                     </button>
                                                 </Link>
 
