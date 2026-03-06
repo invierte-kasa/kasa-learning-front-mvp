@@ -260,29 +260,124 @@
                 box-shadow: 0 2px 0 #059669;
             }
 
-            /* Success/Failure feedback */
+            /* Success/Failure feedback - Modal inferior estilo Duolingo */
             .feedback-overlay {
                 position: fixed;
                 bottom: 0;
                 left: 0;
                 width: 100%;
-                padding: 2rem;
+                padding: 1.5rem;
+                padding-bottom: 2.5rem;
                 display: none;
-                align-items: center;
-                justify-content: space-between;
+                flex-direction: column;
+                gap: 1rem;
                 z-index: 100;
+                border-top: 3px solid;
+                animation: bounceFeedback 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            }
+
+            @keyframes bounceFeedback {
+                0% { transform: translateY(100%); }
+                60% { transform: translateY(-8px); }
+                80% { transform: translateY(3px); }
+                100% { transform: translateY(0); }
             }
 
             .feedback-overlay.correct {
                 display: flex;
                 background-color: #064e3b;
-                color: #ecfdf5;
+                border-top-color: #10B981;
             }
 
             .feedback-overlay.wrong {
                 display: flex;
                 background-color: #7f1d1d;
-                color: #fee2e2;
+                border-top-color: #EF4444;
+            }
+
+            .feedback-top-row {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+            }
+
+            .feedback-icon-wrapper {
+                width: 44px;
+                height: 44px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+                animation: popIcon 0.4s 0.15s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+            }
+
+            @keyframes popIcon {
+                0% { transform: scale(0); }
+                100% { transform: scale(1); }
+            }
+
+            .feedback-overlay.correct .feedback-icon-wrapper {
+                background-color: #10B981;
+                color: white;
+            }
+
+            .feedback-overlay.wrong .feedback-icon-wrapper {
+                background-color: #EF4444;
+                color: white;
+            }
+
+            .feedback-title {
+                font-weight: 800;
+                font-size: 1.1rem;
+            }
+
+            .feedback-overlay.correct .feedback-title { color: #6ee7b7; }
+            .feedback-overlay.wrong .feedback-title { color: #fca5a5; }
+
+            .feedback-explanation-box {
+                font-size: 1rem;
+                line-height: 1.55;
+                color: white;
+            }
+
+            .feedback-correct-label {
+                font-weight: 700;
+                font-size: 0.95rem;
+                margin-bottom: 0.25rem;
+            }
+
+            .feedback-overlay.correct .feedback-correct-label { color: #6ee7b7; }
+            .feedback-overlay.wrong .feedback-correct-label { color: #fca5a5; }
+
+            .feedback-reason {
+                color: rgba(255, 255, 255, 0.9);
+                font-size: 1rem;
+            }
+
+            .feedback-btn-row {
+                width: 100%;
+            }
+
+            .feedback-btn-row .btn-check {
+                width: 100%;
+                padding: 1rem;
+                border-radius: 12px;
+                font-size: 1rem;
+                font-weight: 800;
+                letter-spacing: 0.5px;
+            }
+
+            .feedback-overlay.correct .feedback-btn-row .btn-check {
+                background-color: #10B981;
+                color: white;
+                box-shadow: 0 4px 0 #059669;
+            }
+
+            .feedback-overlay.wrong .feedback-btn-row .btn-check {
+                background-color: #EF4444;
+                color: white;
+                box-shadow: 0 4px 0 #b91c1c;
             }
 
             /* --- Results Screen Styles --- */
@@ -596,18 +691,21 @@
 
         </div>
 
-        <!-- Correct/Wrong Feedbacks -->
+        <!-- Correct/Wrong Feedback Modal (Duolingo style) -->
         <div id="feedback" class="feedback-overlay">
-            <div style="display: flex; align-items: center; gap: 1rem;">
-                <div id="feedback-icon-bg" style="background: white; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; color: #059669;">
+            <div class="feedback-top-row">
+                <div class="feedback-icon-wrapper">
                     <svg id="feedback-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                 </div>
-                <div>
-                    <h3 id="feedback-title" style="font-weight: 800; font-size: 1.25rem;">¡Impresionante!</h3>
-                    <p id="feedback-sub" style="opacity: 0.9;">Vas por buen camino.</p>
-                </div>
+                <h3 id="feedback-title" class="feedback-title"></h3>
             </div>
-            <button id="feedback-btn" class="btn-check" style="background: white; color: #059669; box-shadow: 0 4px 0 #d1fae5;" onclick="nextQuestion()">CONTINUAR</button>
+            <div class="feedback-explanation-box">
+                <p id="feedback-correct-answer" class="feedback-correct-label"></p>
+                <p id="feedback-reason" class="feedback-reason"></p>
+            </div>
+            <div class="feedback-btn-row">
+                <button id="feedback-btn" class="btn-check" onclick="nextQuestion()">CONTINUAR</button>
+            </div>
         </div>
 
         <script>
@@ -621,39 +719,45 @@
                         'El impuesto que se paga al comprar un inmueble.',
                         'La velocidad con la que se vende una propiedad.'
                     ],
-                    correct: 1
+                    correct: 1,
+                    explanation: 'El flujo de caja es el dinero neto que queda después de restar todos los gastos (hipoteca, mantenimiento, impuestos, seguros) de los ingresos por alquiler. Es la métrica más importante para saber si una propiedad es rentable mes a mes.'
                 },
                 {
                     type: 'cloze',
                     title: 'Completa el significado fundamental:',
                     sentence: 'Un flujo de caja [gap] permite reinvertir, mientras que uno [gap] requiere poner dinero propio.',
                     pool: ['positivo', 'negativo', 'nulo', 'catastral'],
-                    correct: ['positivo', 'negativo']
+                    correct: ['positivo', 'negativo'],
+                    explanation: 'Cuando el flujo de caja es positivo, generas excedente que puedes reinvertir en más propiedades o mejoras. Un flujo negativo significa que tus gastos superan los ingresos y debes cubrir la diferencia de tu bolsillo.'
                 },
                 {
                     type: 'choice',
                     title: 'Si los gastos son mayores que los ingresos, el flujo de caja es...',
                     options: ['Positivo', 'Nulo', 'Negativo', 'Variable'],
-                    correct: 2
+                    correct: 2,
+                    explanation: 'Cuando los gastos superan los ingresos, el resultado es negativo. Esto significa que cada mes pierdes dinero con esa propiedad, lo cual no es sostenible a largo plazo.'
                 },
                 {
                     type: 'input',
                     title: 'Termina la frase: El Cash Flow es el alma de cualquier...',
                     placeholder: 'Escribe la palabra faltante',
-                    correct: 'inversion'
+                    correct: 'inversion',
+                    explanation: 'El Cash Flow es el alma de cualquier inversión inmobiliaria. Sin un flujo de caja saludable, incluso una propiedad que se aprecia en valor puede ser una carga financiera mensual.'
                 },
                 {
                     type: 'cloze',
                     title: 'Une los conceptos correctamente:',
                     sentence: 'Los ingresos [gap] menos los gastos [gap] resultan en el Cash Flow.',
                     pool: ['brutos', 'operativos', 'netos', 'fijos'],
-                    correct: ['brutos', 'operativos']
+                    correct: ['brutos', 'operativos'],
+                    explanation: 'Los ingresos brutos son el total de rentas cobradas sin descontar nada. Los gastos operativos incluyen mantenimiento, impuestos, seguros y administración. La diferencia entre ambos determina tu Cash Flow.'
                 },
                 {
                     type: 'input',
                     title: 'Si cobras $1000 de renta y gastas $700 en hipoteca y mantenimento, ¿cuál es tu flujo de caja?',
                     placeholder: 'Ingresa el monto numérico',
-                    correct: '300'
+                    correct: '300',
+                    explanation: '$1,000 (renta) - $700 (gastos) = $300 de flujo de caja positivo. Ese dinero es tu ganancia mensual neta que puedes ahorrar o reinvertir.'
                 },
                 {
                     type: 'choice',
@@ -664,7 +768,8 @@
                         'Reducir el tamaño de la propiedad.',
                         'Ninguna de las anteriores.'
                     ],
-                    correct: 0
+                    correct: 0,
+                    explanation: 'Un Cash Flow positivo garantiza que la propiedad se paga sola y genera ganancias. Esto hace que la inversión sea sustentable a largo plazo sin depender de capital adicional.'
                 }
             ];
 
@@ -794,33 +899,39 @@
                 showFeedback(isCorrect);
             }
 
+            function getCorrectAnswerText(q) {
+                if (q.type === 'choice') return q.options[q.correct];
+                if (q.type === 'input') return q.correct;
+                if (q.type === 'cloze') return q.correct.join(', ');
+                return '';
+            }
+
             function showFeedback(isCorrect) {
+                const q = questions[currentQuestionIdx];
                 const feedback = document.getElementById('feedback');
-                const iconBg = document.getElementById('feedback-icon-bg');
                 const icon = document.getElementById('feedback-icon');
                 const title = document.getElementById('feedback-title');
-                const sub = document.getElementById('feedback-sub');
-                const btn = document.getElementById('feedback-btn');
+                const correctAnswerEl = document.getElementById('feedback-correct-answer');
+                const reasonEl = document.getElementById('feedback-reason');
+
+                // Reset animation
+                feedback.style.display = 'none';
+                feedback.className = 'feedback-overlay';
+                void feedback.offsetWidth;
 
                 feedback.className = 'feedback-overlay ' + (isCorrect ? 'correct' : 'wrong');
-                
+
                 if (isCorrect) {
-                    iconBg.style.color = '#059669';
                     icon.innerHTML = '<polyline points="20 6 9 17 4 12"></polyline>';
-                    title.innerText = '¡Impresionante!';
-                    sub.innerText = 'Vas por buen camino.';
-                    btn.style.color = '#059669';
-                    btn.style.boxShadow = '0 4px 0 #d1fae5';
+                    title.innerText = '¡Correcto!';
+                    correctAnswerEl.innerText = '';
                 } else {
-                    iconBg.style.color = '#7f1d1d';
                     icon.innerHTML = '<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>';
                     title.innerText = 'Respuesta Incorrecta';
-                    sub.innerText = '¡Tú puedes, inténtalo de nuevo!';
-                    btn.style.color = '#7f1d1d';
-                    btn.style.background = 'white';
-                    btn.style.boxShadow = '0 4px 0 #fee2e2';
+                    correctAnswerEl.innerText = 'Respuesta correcta: ' + getCorrectAnswerText(q);
                 }
 
+                reasonEl.innerText = q.explanation;
                 feedback.style.display = 'flex';
             }
 
