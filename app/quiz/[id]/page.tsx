@@ -47,13 +47,22 @@ function QuizContent() {
         const { data: baseQuestions, error: qError } = await supabase
           .schema('kasa_learn_journey')
           .from('question')
-          .select('id, question_type')
+          .select('id, question_type, correct_answer_summary, wrong_answer_summary')
           .eq('quizz_id', quizId)
 
         if (qError || !baseQuestions || baseQuestions.length === 0) {
           setError('No hay preguntas configuradas para este examen.')
           return
         }
+
+        // Build a lookup map for the summaries
+        const summaryMap: Record<string, { correctAnswerSummary: string | null; wrongAnswerSummary: string | null }> = {}
+        baseQuestions.forEach(q => {
+          summaryMap[q.id] = {
+            correctAnswerSummary: q.correct_answer_summary ?? null,
+            wrongAnswerSummary: q.wrong_answer_summary ?? null,
+          }
+        })
 
         // 3. Optimized Fetching: Batch by type
         const typeGroups = {
@@ -95,7 +104,8 @@ function QuizContent() {
             type: 'choice',
             title: data.question || 'Selecciona la respuesta correcta',
             options: shuffledOptions,
-            correct: correctIndex >= 0 ? correctIndex : 0
+            correct: correctIndex >= 0 ? correctIndex : 0,
+            ...summaryMap[data.question_id]
           })
         })
 
@@ -128,7 +138,8 @@ function QuizContent() {
             title: 'Completa la oración correctamente',
             sentence: sentence,
             pool: pool,
-            correct: correct
+            correct: correct,
+            ...summaryMap[data.question_id]
           })
         })
 
@@ -139,7 +150,8 @@ function QuizContent() {
             type: 'input',
             title: data.question || 'Escribe la respuesta correcta',
             placeholder: 'Escribe aquí...',
-            correct: (data.correct_answers && data.correct_answers.length > 0) ? data.correct_answers[0] : ''
+            correct: (data.correct_answers && data.correct_answers.length > 0) ? data.correct_answers[0] : '',
+            ...summaryMap[data.question_id]
           })
         })
 
@@ -156,7 +168,8 @@ function QuizContent() {
             title: data.question || 'Conecta cada concepto con su definición',
             leftWords: data.left_words || [],
             rightWords: shuffledRight,
-            correctRelations: data.correct_relations || {}
+            correctRelations: data.correct_relations || {},
+            ...summaryMap[data.question_id]
           })
         })
 

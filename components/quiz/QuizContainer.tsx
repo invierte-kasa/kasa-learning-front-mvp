@@ -601,6 +601,10 @@ export function QuizContainer({ questions, onQuit, onRetryQuiz, quizId, quizMeta
           onContinue={handleContinue}
           correctAnswer={!isCorrect ? getCorrectAnswerText() : undefined}
           questionType={currentQuestion?.type}
+          summary={isCorrect
+            ? currentQuestion?.correctAnswerSummary
+            : currentQuestion?.wrongAnswerSummary
+          }
         />
       )}
     </div>

@@ -67,6 +67,8 @@ export interface BaseQuestion {
   id: string;
   type: QuestionType;
   title: string;
+  correctAnswerSummary?: string | null;
+  wrongAnswerSummary?: string | null;
 }
 
 export interface ChoiceQuestion extends BaseQuestion {
