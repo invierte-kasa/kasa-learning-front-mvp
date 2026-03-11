@@ -233,8 +233,8 @@ function ModuleOverviewContent() {
 
     // Determine the CTA label
     const getCtaLabel = (q: QuizDetail) => {
-        if (q.passed) return 'Ver Lección'
-        return 'Leer'
+        if (q.passed) return 'Leer'
+        return 'Completar'
     }
 
     if (loading || userLoading) return (
