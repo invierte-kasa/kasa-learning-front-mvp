@@ -111,6 +111,7 @@ function LessonContent() {
   const [lessonsData, setLessonsData] = useState<LessonData[]>([])
   const [lessonLoading, setLessonLoading] = useState(false)
   const [hasQuestions, setHasQuestions] = useState(true)
+  const [quizPassed, setQuizPassed] = useState(false)
 
   // Track which lesson the user is currently viewing (within the current quiz's lessons)
   const [activeLessonIndex, setActiveLessonIndex] = useState(0)
@@ -172,7 +173,7 @@ function LessonContent() {
 
         // C. Fetch the lessons for THIS quizzId specifically (STRICT schema)
         console.log(`📖 [LessonPage] Petición de lecciones para: ${quizzId}`);
-        const [lessonsRes, questionsRes] = await Promise.all([
+        const [lessonsRes, questionsRes, attemptRes] = await Promise.all([
           supabase
             .schema('kasa_learn_journey')
             .from('lesson')
@@ -182,8 +183,21 @@ function LessonContent() {
             .schema('kasa_learn_journey')
             .from('question')
             .select('id')
-            .eq('quizz_id', quizzId)
+            .eq('quizz_id', quizzId),
+          appUser?.id
+            ? supabase
+                .schema('kasa_learn_journey')
+                .from('user_quizz_attempt')
+                .select('passed')
+                .eq('quizz_id', quizzId)
+                .eq('user_id', appUser.id)
+                .eq('passed', true)
+                .limit(1)
+            : Promise.resolve({ data: [] })
         ])
+
+        const isPassed = (attemptRes.data?.length ?? 0) > 0
+        setQuizPassed(isPassed)
 
         let lessons = lessonsRes.data || []
         const questionCount = questionsRes.data?.length || 0
@@ -667,8 +681,8 @@ function LessonContent() {
                       SIGUIENTE LECCIÓN
                       <ArrowRightIcon />
                     </Button>
-                  ) : hasQuestions ? (
-                    /* Last lesson + has questions → Start quiz */
+                  ) : hasQuestions && !quizPassed ? (
+                    /* Last lesson + has questions + not yet passed → Start quiz */
                     <Link href={`/quiz/${currentQuiz?.id}`} className="w-full no-underline">
                       <Button fullWidth size="lg" className="h-16 rounded-2xl text-lg font-black tracking-wide shadow-xl shadow-kasa-primary/25 gap-3 group">
                         COMENZAR EXAMEN
@@ -676,7 +690,7 @@ function LessonContent() {
                       </Button>
                     </Link>
                   ) : (
-                    /* Last lesson + no questions → Go back to module */
+                    /* Last lesson + no questions OR already passed → Go back */
                     <Link
                       href={quizzes.length > 1 ? `/module/${moduleData?.id}` : `/sections/${moduleData?.section_id}`}
                       className="w-full no-underline"
@@ -688,8 +702,8 @@ function LessonContent() {
                     </Link>
                   )}
                 </div>
-              ) : hasQuestions ? (
-                /* All lessons read + has questions → Show quiz button */
+              ) : hasQuestions && !quizPassed ? (
+                /* All lessons read + has questions + not yet passed → Show quiz button */
                 <Link href={`/quiz/${currentQuiz?.id}`} className="w-full max-w-[420px] no-underline">
                   <Button fullWidth size="lg" className="h-16 rounded-2xl text-lg font-black tracking-wide shadow-xl shadow-kasa-primary/25 gap-3 group">
                     COMENZAR EXAMEN
@@ -709,7 +723,7 @@ function LessonContent() {
                 </Link>
               )}
               <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest">
-                {hasQuestions ? `Gana hasta ${stepMetadata.xp} XP` : 'Solo lectura'}
+                {hasQuestions && !quizPassed ? `Gana hasta ${stepMetadata.xp} XP` : 'Solo lectura'}
               </p>
             </div>
         </div>
