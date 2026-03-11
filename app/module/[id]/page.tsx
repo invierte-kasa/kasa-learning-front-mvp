@@ -232,14 +232,9 @@ function ModuleOverviewContent() {
     }
 
     // Determine the CTA label
-    const getCtaLabel = (q: QuizDetail, index: number) => {
+    const getCtaLabel = (q: QuizDetail) => {
         if (q.passed) return 'Ver Lección'
-        if (index === nextQuizIndex) {
-            if (q.lessonCount > 0 && q.questionCount > 0) return 'Comenzar'
-            if (q.lessonCount > 0) return 'Leer'
-            return 'Examen'
-        }
-        return 'Comenzar'
+        return 'Leer'
     }
 
     if (loading || userLoading) return (
@@ -331,15 +326,9 @@ function ModuleOverviewContent() {
                                         "bg-kasa-card border rounded-2xl p-5 transition-all relative overflow-hidden",
                                         quiz.passed
                                             ? "border-kasa-primary/30"
-                                            : isNext
-                                                ? "border-kasa-primary/50 shadow-lg shadow-kasa-primary/10"
-                                                : "border-kasa-border"
+                                            : "border-kasa-border"
                                     )}
                                 >
-                                    {/* Active indicator */}
-                                    {isNext && !quiz.passed && (
-                                        <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-kasa-primary/50 via-kasa-primary to-kasa-primary/50" />
-                                    )}
 
                                     <div className="flex items-start gap-4">
                                         {/* Step number / status icon */}
@@ -347,9 +336,7 @@ function ModuleOverviewContent() {
                                             "w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0",
                                             quiz.passed
                                                 ? "bg-kasa-primary/15 text-kasa-primary"
-                                                : isNext
-                                                    ? "bg-kasa-primary/15 text-kasa-primary"
-                                                    : "bg-white/5 text-text-muted"
+                                                : "bg-white/5 text-text-muted"
                                         )}>
                                             {quiz.passed ? (
                                                 <CheckCircleIcon />
@@ -401,12 +388,10 @@ function ModuleOverviewContent() {
                                                         "flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all cursor-pointer border-none",
                                                         quiz.passed
                                                             ? "bg-white/5 text-white/60 hover:bg-white/10"
-                                                            : isNext
-                                                                ? "bg-kasa-primary text-white shadow-[0_3px_0_#059669] active:translate-y-0.5 active:shadow-[0_1px_0_#059669]"
-                                                                : "bg-white/5 text-white hover:bg-white/10"
+                                                            : "bg-kasa-primary text-white shadow-[0_3px_0_#059669] active:translate-y-0.5 active:shadow-[0_1px_0_#059669]"
                                                     )}>
                                                         {quiz.passed ? null : <PlayIcon />}
-                                                        {getCtaLabel(quiz, index)}
+                                                        {getCtaLabel(quiz)}
                                                     </button>
                                                 </Link>
 

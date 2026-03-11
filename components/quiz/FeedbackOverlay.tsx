@@ -70,7 +70,7 @@ export function FeedbackOverlay({ isCorrect, onContinue, correctAnswer, question
   return (
     <div
       className={cn(
-        'fixed bottom-0 left-0 w-full z-[100] animate-[slideUp_0.35s_ease-out]',
+        'fixed bottom-0 left-0 w-full z-[100] animate-bounce-feedback',
         isCorrect ? 'bg-feedback-success-dark' : 'bg-feedback-error-dark'
       )}
     >
@@ -115,7 +115,7 @@ export function FeedbackOverlay({ isCorrect, onContinue, correctAnswer, question
           /* ── Incorrect Answer ── */
           <div className="flex flex-col gap-4">
             {/* Header row */}
-            <div className="flex items-center gap-3 animate-[shakeX_0.4s_ease-in-out]">
+            <div className="flex items-center gap-3 animate-shake-x">
               <div className="bg-white rounded-full w-10 h-10 flex items-center justify-center text-feedback-error-dark shrink-0">
                 <XIcon />
               </div>
