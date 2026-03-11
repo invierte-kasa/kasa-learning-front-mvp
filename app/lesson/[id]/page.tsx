@@ -421,25 +421,8 @@ function LessonContent() {
             </div>
           </header>
 
-          {/* Stage Selector (If multiple quizzes per module) */}
-          {quizzes.length > 1 && (
-            <div className="flex gap-2 mb-8 overflow-x-auto pb-2 scrollbar-none">
-              {quizzes.map((q, idx) => (
-                <button
-                  key={q.id}
-                  onClick={() => handleStageChange(idx)}
-                  className={cn(
-                    "flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold transition-all border",
-                    activeQuizIndex === idx
-                      ? "bg-kasa-primary border-kasa-primary text-white shadow-lg shadow-kasa-primary/20"
-                      : "bg-white/5 border-white/10 text-white/40 hover:text-white/60 hover:bg-white/10"
-                  )}
-                >
-                  Paso {q.quizz_number || idx + 1}
-                </button>
-              ))}
-            </div>
-          )}
+
+
 
           {/* Lesson Step Indicators (only when multiple lessons) */}
           {hasMultipleLessons && (

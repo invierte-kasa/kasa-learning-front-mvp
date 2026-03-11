@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
 import { MainNav } from '@/components/layout/MainNav'
-import { ProgressBar } from '@/components/ui/ProgressBar'
 import { Button } from '@/components/ui/Button'
 import { useUser } from '@/context/UserContext'
 import { cn } from '@/lib/utils'
@@ -220,21 +219,21 @@ function ModuleOverviewContent() {
     }
 
     // Determine the nav destination for a quiz
+    // Passed quizzes always go to lesson (read-only review, no re-exam)
     const getQuizHref = (q: QuizDetail) => {
-        // If it has lessons, go to lesson page first
+        if (q.passed) {
+            // Completed: only allow reviewing lessons
+            return `/lesson/${q.id}`
+        }
+        // Not yet passed: go to lesson first (which leads to quiz)
         if (q.lessonCount > 0) return `/lesson/${q.id}`
-        // If it only has questions, go directly to quiz
         if (q.questionCount > 0) return `/quiz/${q.id}`
-        // Fallback
         return `/lesson/${q.id}`
     }
 
     // Determine the CTA label
     const getCtaLabel = (q: QuizDetail, index: number) => {
-        if (q.passed) {
-            if (q.lessonCount > 0) return 'Repasar'
-            return 'Reintentar'
-        }
+        if (q.passed) return 'Ver Lección'
         if (index === nextQuizIndex) {
             if (q.lessonCount > 0 && q.questionCount > 0) return 'Comenzar'
             if (q.lessonCount > 0) return 'Leer'
@@ -293,22 +292,7 @@ function ModuleOverviewContent() {
                     </div>
                 </header>
 
-                {/* Module Progress */}
-                <div className="mb-8 animate-[fadeIn_0.4s_ease-out]" style={{ animationDelay: '0.1s', animationFillMode: 'backwards' }}>
-                    <div className="flex justify-between items-end mb-2">
-                        <div>
-                            <h2 className="text-2xl font-bold text-white mb-1">Etapas del Módulo</h2>
-                            <p className="text-text-muted text-sm">
-                                {quizzes.length === 1
-                                    ? '1 etapa en este módulo'
-                                    : `${quizzes.length} etapas en este módulo`
-                                }
-                            </p>
-                        </div>
-                        <div className="text-kasa-primary font-extrabold text-2xl">{progress}%</div>
-                    </div>
-                    <ProgressBar value={progress} size="lg" />
-                </div>
+
 
                 {/* Module info card */}
                 <div className="bg-kasa-card border border-kasa-border rounded-2xl p-5 mb-8 flex gap-6 flex-wrap animate-[fadeIn_0.4s_ease-out]" style={{ animationDelay: '0.15s', animationFillMode: 'backwards' }}>
@@ -376,12 +360,8 @@ function ModuleOverviewContent() {
 
                                         {/* Content */}
                                         <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <h3 className="text-base font-bold text-white">
-                                                    Etapa {quiz.quizz_number || index + 1}
-                                                </h3>
-
-                                                {/* Type badge */}
+                                            {/* Type badge */}
+                                            <div className="mb-2">
                                                 <span className={cn(
                                                     "text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full",
                                                     quiz.lessonCount > 0 && quiz.questionCount > 0
@@ -413,27 +393,6 @@ function ModuleOverviewContent() {
                                                     {quiz.xp} XP
                                                 </span>
                                             </div>
-
-                                            {/* Score bar (if attempted) */}
-                                            {quiz.bestScore !== null && (
-                                                <div className="flex items-center gap-3 mb-3">
-                                                    <div className="flex-1 h-2 bg-white/5 rounded-full overflow-hidden">
-                                                        <div
-                                                            className={cn(
-                                                                "h-full rounded-full transition-all duration-500",
-                                                                quiz.passed ? "bg-kasa-primary" : "bg-red-400"
-                                                            )}
-                                                            style={{ width: `${quiz.bestScore}%` }}
-                                                        />
-                                                    </div>
-                                                    <span className={cn(
-                                                        "text-xs font-bold",
-                                                        quiz.passed ? "text-kasa-primary" : "text-red-400"
-                                                    )}>
-                                                        {Math.round(quiz.bestScore)}%
-                                                    </span>
-                                                </div>
-                                            )}
 
                                             {/* CTA */}
                                             <div className="flex items-center gap-3">
