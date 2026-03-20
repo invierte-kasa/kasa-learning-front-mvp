@@ -1,32 +1,9 @@
 import { createClient } from '@/utils/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 
-export async function GET(request: NextRequest) {
-    const { searchParams } = new URL(request.url)
-    const tab = searchParams.get('tab') || 'xp'
-
-    const supabase = await createClient()
-
-    const orderField = tab === 'xp' ? 'xp' : 'streak'
-
-    // Use the user_public VIEW (bypasses RLS, returns all users)
-    const { data, error } = await supabase
-        .schema('kasa_learn_journey')
-        .from('user_public')
-        .select('id, display_name, profile_url, xp, streak')
-        .order(orderField, { ascending: false, nullsFirst: false })
-        .limit(10)
-
-    console.log('📊 [API/ranking] Raw user_public query:', { tab, orderField, count: data?.length, data, error })
-
-    if (error) {
-        console.error('❌ [API/ranking] Error fetching rankings:', error)
-        return NextResponse.json({ error: error.message }, { status: 500 })
-    }
-
-    const rankings = (data || []).map((user: any, index: number) => {
+function mapUsers(list: any[]) {
+    return list.slice(0, 10).map((user: any, index: number) => {
         const name = user.display_name || 'User'
-
         return {
             id: user.id,
             name,
@@ -38,8 +15,22 @@ export async function GET(request: NextRequest) {
             title: `${user.xp || 0} XP`,
         }
     })
+}
 
-    console.log('📊 [API/ranking] tab:', tab, '| results:', JSON.stringify(rankings, null, 2))
+export async function GET(_request: NextRequest) {
+    const supabase = await createClient()
 
-    return NextResponse.json(rankings)
+    const { data, error } = await supabase.functions.invoke('get-leaderboard', {
+        method: 'GET',
+    })
+
+    if (error) {
+        console.error('❌ [API/ranking] Error calling get-leaderboard:', error)
+        return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    return NextResponse.json({
+        by_xp: mapUsers(data.by_xp || []),
+        by_streak: mapUsers(data.by_streak || []),
+    })
 }

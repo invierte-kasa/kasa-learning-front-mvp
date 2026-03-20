@@ -26,7 +26,8 @@ const StreakIcon = () => (
 export default function RankingPage() {
   const [tab, setTab] = useState<RankingTab>('xp')
   const [isExitingPage, setIsExitingPage] = useState(false)
-  const [rankings, setRankings] = useState<RankingUser[]>([])
+  const [rankingsByXp, setRankingsByXp] = useState<RankingUser[]>([])
+  const [rankingsByStreak, setRankingsByStreak] = useState<RankingUser[]>([])
   const [loadingRankings, setLoadingRankings] = useState(true)
   const router = useRouter()
   const { user } = useUser()
@@ -35,27 +36,24 @@ export default function RankingPage() {
     async function fetchRankings() {
       setLoadingRankings(true)
       try {
-        const res = await fetch(`/api/ranking?tab=${tab}`)
-        const contentType = res.headers.get('content-type')
-        if (!contentType?.includes('application/json')) {
-          console.error('❌ /api/ranking returned non-JSON:', res.status, contentType)
-          throw new Error(`API returned ${res.status} with content-type: ${contentType}`)
-        }
+        const res = await fetch('/api/ranking')
         if (!res.ok) throw new Error(`Failed to fetch rankings: ${res.status}`)
-        const data: RankingUser[] = await res.json()
-        console.log('📊 [Ranking Page] Fetched rankings:', data)
-        setRankings(data)
+        const data = await res.json()
+        setRankingsByXp(data.by_xp || [])
+        setRankingsByStreak(data.by_streak || [])
       } catch (err) {
         console.error('❌ Error fetching rankings:', err)
-        setRankings([])
+        setRankingsByXp([])
+        setRankingsByStreak([])
       } finally {
         setLoadingRankings(false)
       }
     }
 
     fetchRankings()
-  }, [tab])
+  }, [])
 
+  const rankings = tab === 'xp' ? rankingsByXp : rankingsByStreak
   const hasPodium = rankings.length >= 3
   const podiumUsers = hasPodium ? rankings.slice(0, 3) : []
   const listUsers = hasPodium ? rankings.slice(3) : rankings
