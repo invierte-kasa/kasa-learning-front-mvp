@@ -1,5 +1,7 @@
 'use client'
 
+import Image from 'next/image'
+
 interface ProfileHeroProps {
   name: string
   avatar: string
@@ -12,9 +14,11 @@ export function ProfileHero({ name, avatar, level, role, memberSince }: ProfileH
   return (
     <section className="flex flex-col items-center text-center mb-8">
       <div className="relative mb-6">
-        <img
+        <Image
           src={avatar}
           alt={name}
+          width={150}
+          height={150}
           className="w-[150px] h-[150px] rounded-full border-4 border-kasa-primary object-cover shadow-[0_0_25px_rgba(16,185,129,0.2)]"
         />
         <div className="absolute bottom-1 right-4 bg-kasa-primary text-black font-extrabold text-xs px-3 py-1 rounded-full border-[3px] border-kasa-body">

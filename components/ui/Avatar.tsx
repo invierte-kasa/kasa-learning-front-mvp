@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { HTMLAttributes, forwardRef } from 'react'
 import { cn } from '@/lib/utils'
 
@@ -20,6 +21,13 @@ const Avatar = forwardRef<HTMLDivElement, AvatarProps>(
       lg: 'w-[70px] h-[70px]',
       xl: 'w-[90px] h-[90px]',
     }
+    
+    const pixelSizes = {
+      sm: 40,
+      md: 44,
+      lg: 70,
+      xl: 90,
+    }
 
     const borders = {
       default: 'border-kasa-border',
@@ -30,9 +38,11 @@ const Avatar = forwardRef<HTMLDivElement, AvatarProps>(
 
     return (
       <div ref={ref} className={cn('relative', className)} {...props}>
-        <img
+        <Image
           src={src}
           alt={alt}
+          width={pixelSizes[size]}
+          height={pixelSizes[size]}
           className={cn(
             'rounded-full object-cover',
             sizes[size],

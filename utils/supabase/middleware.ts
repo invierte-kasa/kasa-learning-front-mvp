@@ -6,7 +6,7 @@ export const updateSession = async (request: NextRequest) => {
   const hostname = request.headers.get("host") || "";
 
   // Detectar HTTPS (necesario para cookies seguras en local)
-  const isHttps = hostname.includes("local.inviertekasa.shop");
+  const isHttps = hostname.includes("inviertekasa.shop") && !isLocal;
 
   let response = NextResponse.next({
     request: {
@@ -14,7 +14,7 @@ export const updateSession = async (request: NextRequest) => {
     },
   });
 
-  const cookieDomain = isLocal ? ".local.inviertekasa.shop" : (process.env.NEXT_PUBLIC_COOKIE_DOMAIN || undefined);
+  const cookieDomain = process.env.NEXT_PUBLIC_COOKIE_DOMAIN || undefined;
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -48,11 +48,23 @@ export const updateSession = async (request: NextRequest) => {
 
   const { data: { user } } = await supabase.auth.getUser();
 
-  // Gestión de protección - Si no hay usuario, redirigir al dominio principal (Home)
-  // No redirigimos a /sign-in para evitar que el middleware del frontend nos mande a investments
-  if (!user && !request.nextUrl.pathname.startsWith('/_next') && !request.nextUrl.pathname.includes('.')) {
-    const MAIN_APP_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://local.inviertekasa.shop:3000';
-    return NextResponse.redirect(new URL('/', MAIN_APP_URL));
+  const pathname = request.nextUrl.pathname;
+  const isAuthPage = pathname.startsWith('/login');
+  // /auth/* debe ser siempre accesible (OAuth callback)
+  const isAuthCallback = pathname.startsWith('/auth');
+
+  // Si no hay usuario y no es una ruta pública, redirigir a login
+  if (!user && !isAuthPage && !isAuthCallback && !pathname.startsWith('/_next') && !pathname.includes('.')) {
+    const url = request.nextUrl.clone();
+    url.pathname = '/login';
+    return NextResponse.redirect(url);
+  }
+
+  // Si hay usuario y trata de entrar a login, redirigir a inicio
+  if (user && isAuthPage) {
+    const url = request.nextUrl.clone();
+    url.pathname = '/';
+    return NextResponse.redirect(url);
   }
 
   return response;

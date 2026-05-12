@@ -5,11 +5,11 @@ export const createClient = async () => {
   const cookieStore = await cookies();
   const headerList = await headers();
   const host = headerList.get("host") || "";
-  // En local con proxy experimental-https, el protocolo suele ser https
-  const isHttps = host.includes("local.inviertekasa.shop");
-
   const isLocal = process.env.NEXT_PUBLIC_APP_ENV === "local";
-  const cookieDomain = isLocal ? ".local.inviertekasa.shop" : (process.env.NEXT_PUBLIC_COOKIE_DOMAIN || undefined);
+
+  // En local no forzamos https a menos que la URL lo tenga
+  const isHttps = host.includes("inviertekasa.shop") && !isLocal;
+  const cookieDomain = process.env.NEXT_PUBLIC_COOKIE_DOMAIN || undefined;
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
